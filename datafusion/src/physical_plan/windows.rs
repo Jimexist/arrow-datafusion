@@ -20,14 +20,13 @@
 use crate::error::{DataFusionError, Result};
 use crate::physical_plan::{
     aggregates,
-    expressions::{Lag, Lead, Literal, NthValue, RowNumber},
+    expressions::{Literal, NthValue, RowNumber, WindowShift},
     type_coercion::coerce,
     window_functions::signature_for_built_in,
     window_functions::BuiltInWindowFunctionExpr,
     window_functions::{BuiltInWindowFunction, WindowFunction},
     Accumulator, AggregateExpr, Distribution, ExecutionPlan, Partitioning, PhysicalExpr,
     RecordBatchStream, SendableRecordBatchStream, WindowAccumulator, WindowExpr,
-    WindowShift,
 };
 use crate::scalar::ScalarValue;
 use arrow::array::new_null_array;
@@ -97,13 +96,13 @@ fn create_built_in_window_expr(
             let coerced_args = coerce(args, input_schema, &signature_for_built_in(fun))?;
             let arg = coerced_args[0].clone();
             let data_type = args[0].data_type(input_schema)?;
-            Ok(Arc::new(Lag::new(name, data_type, arg)))
+            Ok(Arc::new(WindowShift::new(name, 1, data_type, arg)))
         }
         BuiltInWindowFunction::Lead => {
             let coerced_args = coerce(args, input_schema, &signature_for_built_in(fun))?;
             let arg = coerced_args[0].clone();
             let data_type = args[0].data_type(input_schema)?;
-            Ok(Arc::new(Lead::new(name, data_type, arg)))
+            Ok(Arc::new(WindowShift::new(name, -1, data_type, arg)))
         }
         BuiltInWindowFunction::NthValue => {
             let coerced_args = coerce(args, input_schema, &signature_for_built_in(fun))?;
@@ -464,19 +463,23 @@ async fn compute_window_aggregate(
                     } else {
                         let data_type = arr.data_type();
                         match window_shift {
-                            Some(WindowShift::Lead(offset))
-                            | Some(WindowShift::Lag(offset))
-                                if offset >= total_num_rows =>
+                            Some(offset)
+                                if offset >= total_num_rows as i32
+                                    || -offset >= total_num_rows as i32 =>
                             {
                                 new_null_array(data_type, total_num_rows)
                             }
-                            Some(WindowShift::Lead(offset)) if offset > 0 => concat(&[
-                                arr.slice(offset, total_num_rows - offset).as_ref(),
-                                new_null_array(data_type, offset).as_ref(),
+                            Some(offset) if offset < 0 => concat(&[
+                                arr.slice(
+                                    (-offset) as usize,
+                                    total_num_rows - (-offset) as usize,
+                                )
+                                .as_ref(),
+                                new_null_array(data_type, (-offset) as usize).as_ref(),
                             ])?,
-                            Some(WindowShift::Lag(offset)) if offset > 0 => concat(&[
-                                new_null_array(data_type, offset).as_ref(),
-                                arr.slice(0, total_num_rows - offset).as_ref(),
+                            Some(offset) if offset > 0 => concat(&[
+                                new_null_array(data_type, offset as usize).as_ref(),
+                                arr.slice(0, total_num_rows - offset as usize).as_ref(),
                             ])?,
                             _ => arr,
                         }

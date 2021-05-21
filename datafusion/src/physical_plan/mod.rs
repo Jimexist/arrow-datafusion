@@ -524,17 +524,6 @@ pub trait Accumulator: Send + Sync + Debug {
     fn evaluate(&self) -> Result<ScalarValue>;
 }
 
-/// a window shift models a behavior in window functions in that a final “shift” can happen near the
-/// end so that we can effectively implement lead and lag functions without handling e.g. peeking
-/// iterators
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WindowShift {
-    /// a final window shift that peeks into future rows by an offset, 0 size must be > 0
-    Lead(usize),
-    /// a final window shift that looks back into the past rows by an offset, usize must be > 0
-    Lag(usize),
-}
-
 /// A window accumulator represents a stateful object that lives throughout the evaluation of multiple
 /// rows and generically accumulates values.
 ///
@@ -587,7 +576,7 @@ pub trait WindowAccumulator: Send + Sync + Debug {
     fn evaluate(&self) -> Result<Option<ScalarValue>>;
 
     /// returns the final window shift if specified.
-    fn window_shift(&self) -> Option<WindowShift> {
+    fn window_shift(&self) -> Option<i32> {
         None
     }
 }

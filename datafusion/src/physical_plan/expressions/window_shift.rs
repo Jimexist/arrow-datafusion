@@ -21,7 +21,6 @@
 use crate::error::{DataFusionError, Result};
 use crate::physical_plan::{
     window_functions::BuiltInWindowFunctionExpr, PhysicalExpr, WindowAccumulator,
-    WindowShift,
 };
 use crate::scalar::ScalarValue;
 use arrow::array::ArrayRef;
@@ -29,26 +28,33 @@ use arrow::datatypes::{DataType, Field};
 use std::any::Any;
 use std::sync::Arc;
 
-/// lead expression
+/// window shift expression
 #[derive(Debug)]
-pub struct Lead {
+pub struct WindowShift {
     name: String,
+    shift: i32,
     data_type: DataType,
     expr: Arc<dyn PhysicalExpr>,
 }
 
-impl Lead {
-    /// create a lead window expr
-    pub fn new(name: String, data_type: DataType, expr: Arc<dyn PhysicalExpr>) -> Self {
+impl WindowShift {
+    /// create a new window shift expression
+    pub fn new(
+        name: String,
+        shift: i32,
+        data_type: DataType,
+        expr: Arc<dyn PhysicalExpr>,
+    ) -> Self {
         Self {
             name,
+            shift,
             data_type,
             expr,
         }
     }
 }
 
-impl BuiltInWindowFunctionExpr for Lead {
+impl BuiltInWindowFunctionExpr for WindowShift {
     /// Return a reference to Any that can be used for downcasting
     fn as_any(&self) -> &dyn Any {
         self
@@ -68,56 +74,7 @@ impl BuiltInWindowFunctionExpr for Lead {
     }
 
     fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
-        Ok(Box::new(CopyAccumulator {
-            // TODO add support for customized offset
-            window_shift: WindowShift::Lead(1),
-        }))
-    }
-}
-
-/// lag expression
-#[derive(Debug)]
-pub struct Lag {
-    name: String,
-    data_type: DataType,
-    expr: Arc<dyn PhysicalExpr>,
-}
-
-impl Lag {
-    /// create a lag window expr
-    pub fn new(name: String, data_type: DataType, expr: Arc<dyn PhysicalExpr>) -> Self {
-        Self {
-            name,
-            data_type,
-            expr,
-        }
-    }
-}
-
-impl BuiltInWindowFunctionExpr for Lag {
-    /// Return a reference to Any that can be used for downcasting
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn field(&self) -> Result<Field> {
-        let nullable = true;
-        Ok(Field::new(&self.name, self.data_type.clone(), nullable))
-    }
-
-    fn expressions(&self) -> Vec<Arc<dyn PhysicalExpr>> {
-        vec![self.expr.clone()]
-    }
-
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
-        Ok(Box::new(CopyAccumulator {
-            // TODO add support for customized offset
-            window_shift: WindowShift::Lag(1),
-        }))
+        Ok(Box::new(CopyAccumulator { offset: self.shift }))
     }
 }
 
@@ -126,7 +83,7 @@ impl BuiltInWindowFunctionExpr for Lag {
 /// batches of data
 #[derive(Debug)]
 struct CopyAccumulator {
-    window_shift: WindowShift,
+    offset: i32,
 }
 
 impl WindowAccumulator for CopyAccumulator {
@@ -153,8 +110,8 @@ impl WindowAccumulator for CopyAccumulator {
         Ok(None)
     }
 
-    fn window_shift(&self) -> Option<WindowShift> {
-        Some(self.window_shift)
+    fn window_shift(&self) -> Option<i32> {
+        Some(self.offset)
     }
 }
 
@@ -166,13 +123,23 @@ mod tests {
 
     #[test]
     fn lead_lag_window_shift() -> Result<()> {
-        let lead = Arc::new(Lead::new("lead".to_owned(), DataType::Float32, col("c3")));
+        let lead = Arc::new(WindowShift::new(
+            "lead".to_owned(),
+            -1,
+            DataType::Float32,
+            col("c3"),
+        ));
         let acc = lead.create_accumulator()?;
-        assert_eq!(WindowShift::Lead(1), acc.window_shift().unwrap());
+        assert_eq!(Some(-1), acc.window_shift());
 
-        let lag = Arc::new(Lag::new("lead".to_owned(), DataType::Float32, col("c3")));
+        let lag = Arc::new(WindowShift::new(
+            "lag".to_owned(),
+            1,
+            DataType::Float32,
+            col("c3"),
+        ));
         let acc = lag.create_accumulator()?;
-        assert_eq!(WindowShift::Lag(1), acc.window_shift().unwrap());
+        assert_eq!(Some(1), acc.window_shift());
         Ok(())
     }
 }

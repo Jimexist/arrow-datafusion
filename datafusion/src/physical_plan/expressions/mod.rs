@@ -36,7 +36,6 @@ mod count;
 mod in_list;
 mod is_not_null;
 mod is_null;
-mod lead_lag;
 mod literal;
 mod min_max;
 mod negative;
@@ -46,6 +45,7 @@ mod nullif;
 mod row_number;
 mod sum;
 mod try_cast;
+mod window_shift;
 
 pub use average::{avg_return_type, Avg, AvgAccumulator};
 pub use binary::{binary, binary_operator_data_type, BinaryExpr};
@@ -56,7 +56,6 @@ pub use count::Count;
 pub use in_list::{in_list, InListExpr};
 pub use is_not_null::{is_not_null, IsNotNullExpr};
 pub use is_null::{is_null, IsNullExpr};
-pub use lead_lag::{Lag, Lead};
 pub use literal::{lit, Literal};
 pub use min_max::{Max, Min};
 pub use negative::{negative, NegativeExpr};
@@ -66,6 +65,7 @@ pub use nullif::{nullif_func, SUPPORTED_NULLIF_TYPES};
 pub use row_number::RowNumber;
 pub use sum::{sum_return_type, Sum};
 pub use try_cast::{try_cast, TryCastExpr};
+pub use window_shift::WindowShift;
 /// returns the name of the state
 pub fn format_state_name(name: &str, state_name: &str) -> String {
     format!("{}[{}]", name, state_name)
