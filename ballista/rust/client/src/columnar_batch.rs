@@ -114,7 +114,6 @@ impl ColumnarBatch {
 /// A columnar value can either be a scalar value or an Arrow array.
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
-
 pub enum ColumnarValue {
     Scalar(ScalarValue, usize),
     Columnar(ArrayRef),

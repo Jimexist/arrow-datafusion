@@ -20,15 +20,17 @@
 use crate::error::{DataFusionError, Result};
 use crate::physical_plan::{
     aggregates,
-    expressions::{Literal, NthValue, RowNumber},
+    expressions::{Lag, Lead, Literal, NthValue, RowNumber},
     type_coercion::coerce,
     window_functions::signature_for_built_in,
     window_functions::BuiltInWindowFunctionExpr,
     window_functions::{BuiltInWindowFunction, WindowFunction},
     Accumulator, AggregateExpr, Distribution, ExecutionPlan, Partitioning, PhysicalExpr,
     RecordBatchStream, SendableRecordBatchStream, WindowAccumulator, WindowExpr,
+    WindowShift,
 };
 use crate::scalar::ScalarValue;
+use arrow::array::new_null_array;
 use arrow::compute::concat;
 use arrow::{
     array::{Array, ArrayRef},
@@ -91,6 +93,18 @@ fn create_built_in_window_expr(
 ) -> Result<Arc<dyn BuiltInWindowFunctionExpr>> {
     match fun {
         BuiltInWindowFunction::RowNumber => Ok(Arc::new(RowNumber::new(name))),
+        BuiltInWindowFunction::Lag => {
+            let coerced_args = coerce(args, input_schema, &signature_for_built_in(fun))?;
+            let arg = coerced_args[0].clone();
+            let data_type = args[0].data_type(input_schema)?;
+            Ok(Arc::new(Lag::new(name, data_type, arg)))
+        }
+        BuiltInWindowFunction::Lead => {
+            let coerced_args = coerce(args, input_schema, &signature_for_built_in(fun))?;
+            let arg = coerced_args[0].clone();
+            let data_type = args[0].data_type(input_schema)?;
+            Ok(Arc::new(Lead::new(name, data_type, arg)))
+        }
         BuiltInWindowFunction::NthValue => {
             let coerced_args = coerce(args, input_schema, &signature_for_built_in(fun))?;
             let arg = coerced_args[0].clone();
@@ -421,18 +435,52 @@ async fn compute_window_aggregate(
     let aggregated_mapped = finalize_window_aggregation(&window_accumulators)
         .map_err(DataFusionError::into_arrow_external_error)?;
 
+    let window_shifts = window_accumulators
+        .iter()
+        .map(|acc| acc.window_shift())
+        .collect::<Vec<_>>();
+
     let mut columns: Vec<ArrayRef> = accumulator
         .iter()
         .zip(aggregated_mapped)
-        .map(|(acc, agg)| {
-            Ok(match (acc, agg) {
-                (acc, Some(scalar_value)) if acc.is_empty() => {
+        .zip(window_shifts)
+        .map(|((acc, agg), window_shift)| {
+            Ok(match (acc, agg, window_shift) {
+                (acc, Some(scalar_value), None) if acc.is_empty() => {
                     scalar_value.to_array_of_size(total_num_rows)
                 }
-                (acc, None) if !acc.is_empty() => {
+                (acc, None, window_shift) if !acc.is_empty() => {
                     let vec_array: Vec<&dyn Array> =
                         acc.iter().map(|arc| arc.as_ref()).collect();
-                    concat(&vec_array)?
+                    let arr: ArrayRef = concat(&vec_array)?;
+                    if arr.is_empty() {
+                        arr
+                    } else if arr.len() != total_num_rows {
+                        return Err(DataFusionError::Internal(format!(
+                            "Invalid concatenated array of length {}, expecting {}",
+                            arr.len(),
+                            total_num_rows
+                        )));
+                    } else {
+                        let data_type = arr.data_type();
+                        match window_shift {
+                            Some(WindowShift::Lead(offset))
+                            | Some(WindowShift::Lag(offset))
+                                if offset >= total_num_rows =>
+                            {
+                                new_null_array(data_type, total_num_rows)
+                            }
+                            Some(WindowShift::Lead(offset)) if offset > 0 => concat(&[
+                                arr.slice(offset, total_num_rows - offset).as_ref(),
+                                new_null_array(data_type, offset).as_ref(),
+                            ])?,
+                            Some(WindowShift::Lag(offset)) if offset > 0 => concat(&[
+                                new_null_array(data_type, offset).as_ref(),
+                                arr.slice(0, total_num_rows - offset).as_ref(),
+                            ])?,
+                            _ => arr,
+                        }
+                    }
                 }
                 _ => {
                     return Err(DataFusionError::Execution(
