@@ -1269,6 +1269,65 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn window() -> Result<()> {
+        let results = execute("SELECT c1, MAX(c2) OVER () FROM test", 4).await?;
+        assert_eq!(results.len(), 1);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn window_plan() -> Result<()> {
+        let schema = Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Int32, false),
+        ]);
+
+        let batch = RecordBatch::try_new(
+            Arc::new(schema.clone()),
+            vec![
+                Arc::new(Int32Array::from(vec![1, 10, 10, 100])),
+                Arc::new(Int32Array::from(vec![2, 12, 12, 120])),
+            ],
+        )?;
+        let mut ctx = ExecutionContext::new();
+        let provider = MemTable::try_new(Arc::new(schema), vec![vec![batch]])?;
+        ctx.register_table("t", Arc::new(provider))?;
+
+        let logical_plan = ctx.create_logical_plan("SELECT a, MAX(b) OVER () FROM t")?;
+        let opt_plan = ctx.optimize(&logical_plan)?;
+        let physical_plan = ctx.create_physical_plan(&opt_plan)?;
+        assert_eq!(
+            format!("{:?}", physical_plan),
+            "ProjectionExec { \
+                expr: [(Column { name: \"a\" }, \"a\"), (Column { name: \"MAX(b)\" }, \"MAX(b)\")], \
+                schema: Schema { \
+                    fields: [\
+                    Field { name: \"a\", data_type: Int32, nullable: false, dict_id: 0, dict_is_ordered: false, metadata: None }, \
+                    Field { name: \"MAX(b)\", data_type: Int32, nullable: true, dict_id: 0, dict_is_ordered: false, metadata: None }], \
+                    metadata: {} }, \
+                    input: RepartitionExec { \
+                        input: WindowAggExec { \
+                            input: partitions: [...]\
+                            schema: Schema { fields: [\
+                                Field { name: \"a\", data_type: Int32, nullable: false, dict_id: 0, dict_is_ordered: false, metadata: None }, \
+                                Field { name: \"b\", data_type: Int32, nullable: false, dict_id: 0, dict_is_ordered: false, metadata: None }], \
+                                metadata: {} }\
+                                projection: Some([0, 1]), \
+                                window_expr: [AggregateWindowExpr { \
+                                    aggregate: Max { name: \"MAX(b)\", data_type: Int32, nullable: true, expr: Column { name: \"b\" } } }], \
+                                    schema: Schema { fields: [\
+                                        Field { name: \"MAX(b)\", data_type: Int32, nullable: true, dict_id: 0, dict_is_ordered: false, metadata: None }, \
+                                        Field { name: \"a\", data_type: Int32, nullable: false, dict_id: 0, dict_is_ordered: false, metadata: None }, \
+                                        Field { name: \"b\", data_type: Int32, nullable: false, dict_id: 0, dict_is_ordered: false, metadata: None }], metadata: {} }, \
+                                        input_schema: Schema { fields: [\
+                                            Field { name: \"a\", data_type: Int32, nullable: false, dict_id: 0, dict_is_ordered: false, metadata: None }, \
+                                            Field { name: \"b\", data_type: Int32, nullable: false, dict_id: 0, dict_is_ordered: false, metadata: None }], metadata: {} } }, \
+                                            partitioning: RoundRobinBatch(16), channels: Mutex { data: {} } } }"
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn aggregate() -> Result<()> {
         let results = execute("SELECT SUM(c1), SUM(c2) FROM test", 4).await?;
         assert_eq!(results.len(), 1);
