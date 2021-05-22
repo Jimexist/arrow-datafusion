@@ -488,7 +488,7 @@ impl RecordBatchStream for WindowAggStream {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
 
     // /// some mock data to test windows
     // fn some_data() -> (Arc<Schema>, Vec<RecordBatch>) {
