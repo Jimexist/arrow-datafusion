@@ -801,14 +801,21 @@ async fn csv_query_count() -> Result<()> {
 async fn csv_query_window_with_empty_over() -> Result<()> {
     let mut ctx = ExecutionContext::new();
     register_aggregate_csv(&mut ctx)?;
-    let sql = "select c2, sum(c3) over () from aggregate_test_100 limit 5";
+    let sql = "select \
+    c2, \
+    sum(c3) over (), \
+    avg(c3) over (), \
+    count(c3) over (), \
+    max(c3) over (), \
+    min(c3) over () \
+    from aggregate_test_100 limit 5";
     let actual = execute(&mut ctx, sql).await;
     let expected = vec![
-        vec!["2", "781"],
-        vec!["5", "781"],
-        vec!["1", "781"],
-        vec!["1", "781"],
-        vec!["5", "781"],
+        vec!["2", "781", "7.81", "100", "125", "-117"],
+        vec!["5", "781", "7.81", "100", "125", "-117"],
+        vec!["1", "781", "7.81", "100", "125", "-117"],
+        vec!["1", "781", "7.81", "100", "125", "-117"],
+        vec!["5", "781", "7.81", "100", "125", "-117"],
     ];
     assert_eq!(expected, actual);
     Ok(())
