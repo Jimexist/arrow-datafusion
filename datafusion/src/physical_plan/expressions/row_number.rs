@@ -18,7 +18,9 @@
 //! Defines physical expressions that can evaluated at runtime during query execution
 
 use crate::error::Result;
-use crate::physical_plan::{BuiltInWindowFunctionExpr, PhysicalExpr};
+use crate::physical_plan::{BuiltInWindowFunctionExpr, PhysicalExpr, WindowAccumulator};
+use crate::scalar::ScalarValue;
+use arrow::array::ArrayRef;
 use arrow::datatypes::{DataType, Field};
 use std::any::Any;
 use std::sync::Arc;
@@ -54,5 +56,43 @@ impl BuiltInWindowFunctionExpr for RowNumber {
 
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
+        Ok(Box::new(RowNumberAccumulator::new()))
+    }
+}
+
+#[derive(Debug)]
+struct RowNumberAccumulator {
+    row_number: u64,
+}
+
+impl RowNumberAccumulator {
+    /// new count accumulator
+    pub fn new() -> Self {
+        Self { row_number: 0 }
+    }
+}
+
+impl WindowAccumulator for RowNumberAccumulator {
+    fn scan(&mut self, _values: &[ScalarValue]) -> Result<Option<ScalarValue>> {
+        let result = Some(ScalarValue::UInt64(Some(self.row_number)));
+        self.row_number += 1;
+        Ok(result)
+    }
+
+    fn scan_batch(&mut self, values: &[ArrayRef]) -> Result<Option<Vec<ScalarValue>>> {
+        let array = &values[0];
+        let new_row_number = self.row_number + array.len() as u64;
+        let result = (self.row_number..new_row_number)
+            .map(|i| ScalarValue::UInt64(Some(i)))
+            .collect();
+        self.row_number = new_row_number;
+        Ok(Some(result))
+    }
+
+    fn evaluate(&self) -> Result<Option<ScalarValue>> {
+        Ok(None)
     }
 }

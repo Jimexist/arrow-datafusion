@@ -120,9 +120,7 @@ impl WindowExpr for BuiltInWindowExpr {
     }
 
     fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
-        Err(DataFusionError::NotImplemented(
-            "WindowExpr::create_accumulator".to_owned(),
-        ))
+        self.window.create_accumulator()
     }
 }
 

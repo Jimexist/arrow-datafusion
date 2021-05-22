@@ -486,6 +486,11 @@ pub trait BuiltInWindowFunctionExpr: Send + Sync + Debug {
     fn name(&self) -> &str {
         "BuiltInWindowFunctionExpr: default name"
     }
+
+    /// the accumulator used to accumulate values from the expressions.
+    /// the accumulator expects the same number of arguments as `expressions` and must
+    /// return states with the same description as `state_fields`
+    fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>>;
 }
 
 /// An accumulator represents a stateful object that lives throughout the evaluation of multiple rows and
