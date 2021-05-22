@@ -489,45 +489,44 @@ impl RecordBatchStream for WindowAggStream {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arrow::array::Float64Array;
 
-    /// some mock data to test windows
-    fn some_data() -> (Arc<Schema>, Vec<RecordBatch>) {
-        // define a schema.
-        let schema = Arc::new(Schema::new(vec![
-            Field::new("a", DataType::UInt32, false),
-            Field::new("b", DataType::Float64, false),
-        ]));
+    // /// some mock data to test windows
+    // fn some_data() -> (Arc<Schema>, Vec<RecordBatch>) {
+    //     // define a schema.
+    //     let schema = Arc::new(Schema::new(vec![
+    //         Field::new("a", DataType::UInt32, false),
+    //         Field::new("b", DataType::Float64, false),
+    //     ]));
 
-        // define data.
-        (
-            schema.clone(),
-            vec![
-                RecordBatch::try_new(
-                    schema.clone(),
-                    vec![
-                        Arc::new(UInt32Array::from(vec![2, 3, 4, 4])),
-                        Arc::new(Float64Array::from(vec![1.0, 2.0, 3.0, 4.0])),
-                    ],
-                )
-                .unwrap(),
-                RecordBatch::try_new(
-                    schema,
-                    vec![
-                        Arc::new(UInt32Array::from(vec![2, 3, 3, 4])),
-                        Arc::new(Float64Array::from(vec![1.0, 2.0, 3.0, 4.0])),
-                    ],
-                )
-                .unwrap(),
-            ],
-        )
-    }
+    //     // define data.
+    //     (
+    //         schema.clone(),
+    //         vec![
+    //             RecordBatch::try_new(
+    //                 schema.clone(),
+    //                 vec![
+    //                     Arc::new(UInt32Array::from(vec![2, 3, 4, 4])),
+    //                     Arc::new(Float64Array::from(vec![1.0, 2.0, 3.0, 4.0])),
+    //                 ],
+    //             )
+    //             .unwrap(),
+    //             RecordBatch::try_new(
+    //                 schema,
+    //                 vec![
+    //                     Arc::new(UInt32Array::from(vec![2, 3, 3, 4])),
+    //                     Arc::new(Float64Array::from(vec![1.0, 2.0, 3.0, 4.0])),
+    //                 ],
+    //             )
+    //             .unwrap(),
+    //         ],
+    //     )
+    // }
 
-    #[tokio::test]
-    async fn window_function() -> Result<()> {
-        let input: Arc<dyn ExecutionPlan> = unimplemented!();
-        let input_schema = input.schema();
-        let window_expr = vec![];
-        WindowAggExec::try_new(window_expr, input, input_schema);
-    }
+    // #[tokio::test]
+    // async fn window_function() -> Result<()> {
+    //     let input: Arc<dyn ExecutionPlan> = unimplemented!();
+    //     let input_schema = input.schema();
+    //     let window_expr = vec![];
+    //     WindowAggExec::try_new(window_expr, input, input_schema);
+    // }
 }
