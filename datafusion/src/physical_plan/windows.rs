@@ -18,10 +18,10 @@
 //! Execution plan for window functions
 
 use crate::error::{DataFusionError, Result};
-use crate::physical_plan::type_coercion::coerce;
 use crate::physical_plan::{
     aggregates,
-    expressions::{FirstValue, LastValue, RowNumber},
+    expressions::{FirstValue, LastValue, Literal, NthValue, RowNumber},
+    type_coercion::coerce,
     window_functions::{signature_for_built_in, BuiltInWindowFunction, WindowFunction},
     Accumulator, AggregateExpr, BuiltInWindowFunctionExpr, Distribution, ExecutionPlan,
     Partitioning, PhysicalExpr, RecordBatchStream, SendableRecordBatchStream,
@@ -40,6 +40,7 @@ use futures::stream::{Stream, StreamExt};
 use futures::Future;
 use pin_project_lite::pin_project;
 use std::any::Any;
+use std::convert::TryInto;
 use std::iter;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -89,6 +90,22 @@ fn create_built_in_window_expr(
 ) -> Result<Arc<dyn BuiltInWindowFunctionExpr>> {
     match fun {
         BuiltInWindowFunction::RowNumber => Ok(Arc::new(RowNumber::new(name))),
+        BuiltInWindowFunction::NthValue => {
+            let coerced_args = coerce(args, input_schema, &signature_for_built_in(fun))?;
+            let arg = coerced_args[0].clone();
+            let n = coerced_args[1]
+                .as_any()
+                .downcast_ref::<Literal>()
+                .unwrap()
+                .value();
+            let n: i64 = n
+                .clone()
+                .try_into()
+                .map_err(|e| DataFusionError::Execution(format!("{:?}", e)))?;
+            let n: u32 = n as u32;
+            let data_type = args[0].data_type(input_schema)?;
+            Ok(Arc::new(NthValue::try_new(arg, name, n, data_type)?))
+        }
         BuiltInWindowFunction::FirstValue => {
             let arg =
                 coerce(args, input_schema, &signature_for_built_in(fun))?[0].clone();

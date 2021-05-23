@@ -72,7 +72,7 @@ impl BuiltInWindowFunctionExpr for FirstValue {
 }
 
 // sql values start with 1, so we can use 0 to indicate the special last value behavior
-const SPECIAL_USIZE_VALUE_FOR_LAST: usize = 0;
+const SPECIAL_SIZE_VALUE_FOR_LAST: u32 = 0;
 
 /// last_value expression
 #[derive(Debug)]
@@ -114,7 +114,7 @@ impl BuiltInWindowFunctionExpr for LastValue {
 
     fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
         Ok(Box::new(NthValueAccumulator::try_new(
-            SPECIAL_USIZE_VALUE_FOR_LAST,
+            SPECIAL_SIZE_VALUE_FOR_LAST,
             self.data_type.clone(),
         )?))
     }
@@ -124,7 +124,7 @@ impl BuiltInWindowFunctionExpr for LastValue {
 #[derive(Debug)]
 pub struct NthValue {
     name: String,
-    n: usize,
+    n: u32,
     data_type: DataType,
     expr: Arc<dyn PhysicalExpr>,
 }
@@ -134,10 +134,10 @@ impl NthValue {
     pub fn try_new(
         expr: Arc<dyn PhysicalExpr>,
         name: String,
-        n: usize,
+        n: u32,
         data_type: DataType,
     ) -> Result<Self> {
-        if n == SPECIAL_USIZE_VALUE_FOR_LAST {
+        if n == SPECIAL_SIZE_VALUE_FOR_LAST {
             Err(DataFusionError::Execution(
                 "nth_value expect n to be > 0".to_owned(),
             ))
@@ -184,14 +184,14 @@ struct NthValueAccumulator {
     // n the target nth_value, however we'll reuse it for last_value acc, so when n == 0 it specifically
     // means last; also note that it is totally valid for n to be larger than the number of rows input
     // in which case all the values shall be null
-    n: usize,
-    offset: usize,
+    n: u32,
+    offset: u32,
     value: ScalarValue,
 }
 
 impl NthValueAccumulator {
     /// new count accumulator
-    pub fn try_new(n: usize, data_type: DataType) -> Result<Self> {
+    pub fn try_new(n: u32, data_type: DataType) -> Result<Self> {
         Ok(Self {
             n,
             offset: 0,
@@ -203,7 +203,7 @@ impl NthValueAccumulator {
 
 impl WindowAccumulator for NthValueAccumulator {
     fn scan(&mut self, values: &[ScalarValue]) -> Result<Option<ScalarValue>> {
-        if self.n == SPECIAL_USIZE_VALUE_FOR_LAST {
+        if self.n == SPECIAL_SIZE_VALUE_FOR_LAST {
             // for last_value function
             self.value = values[0].clone();
         } else if self.offset < self.n {
@@ -212,10 +212,10 @@ impl WindowAccumulator for NthValueAccumulator {
                 self.value = values[0].clone();
             }
         }
-        Ok(Some(self.value.clone()))
+        Ok(None)
     }
 
     fn evaluate(&self) -> Result<Option<ScalarValue>> {
-        Ok(None)
+        Ok(Some(self.value.clone()))
     }
 }
