@@ -18,10 +18,11 @@
 //! Execution plan for window functions
 
 use crate::error::{DataFusionError, Result};
+use crate::physical_plan::type_coercion::coerce;
 use crate::physical_plan::{
     aggregates,
-    expressions::RowNumber,
-    window_functions::{BuiltInWindowFunction, WindowFunction},
+    expressions::{FirstValue, LastValue, RowNumber},
+    window_functions::{signature_for_built_in, BuiltInWindowFunction, WindowFunction},
     Accumulator, AggregateExpr, BuiltInWindowFunctionExpr, Distribution, ExecutionPlan,
     Partitioning, PhysicalExpr, RecordBatchStream, SendableRecordBatchStream,
     WindowAccumulator, WindowExpr,
@@ -82,12 +83,24 @@ pub fn create_window_expr(
 
 fn create_built_in_window_expr(
     fun: &BuiltInWindowFunction,
-    _args: &[Arc<dyn PhysicalExpr>],
-    _input_schema: &Schema,
+    args: &[Arc<dyn PhysicalExpr>],
+    input_schema: &Schema,
     name: String,
 ) -> Result<Arc<dyn BuiltInWindowFunctionExpr>> {
     match fun {
         BuiltInWindowFunction::RowNumber => Ok(Arc::new(RowNumber::new(name))),
+        BuiltInWindowFunction::FirstValue => {
+            let arg =
+                coerce(args, input_schema, &signature_for_built_in(fun))?[0].clone();
+            let data_type = args[0].data_type(input_schema)?;
+            Ok(Arc::new(FirstValue::new(arg, name, data_type)))
+        }
+        BuiltInWindowFunction::LastValue => {
+            let arg =
+                coerce(args, input_schema, &signature_for_built_in(fun))?[0].clone();
+            let data_type = args[0].data_type(input_schema)?;
+            Ok(Arc::new(LastValue::new(arg, name, data_type)))
+        }
         _ => Err(DataFusionError::NotImplemented(format!(
             "window function with {:?} not yet implemented",
             fun

@@ -40,6 +40,7 @@ mod literal;
 mod min_max;
 mod negative;
 mod not;
+mod nth_value;
 mod nullif;
 mod row_number;
 mod sum;

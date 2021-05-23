@@ -19,202 +19,203 @@
 
 use crate::error::{DataFusionError, Result};
 use crate::physical_plan::{BuiltInWindowFunctionExpr, PhysicalExpr, WindowAccumulator};
-use arrow::array::ArrayRef;
+use crate::scalar::ScalarValue;
 use arrow::datatypes::{DataType, Field};
 use std::any::Any;
+use std::convert::TryFrom;
 use std::sync::Arc;
 
 /// first_value expression
 #[derive(Debug)]
 pub struct FirstValue {
-  name: String,
-  data_type: DataType,
-  expr: Arc<dyn PhysicalExpr>,
+    name: String,
+    data_type: DataType,
+    expr: Arc<dyn PhysicalExpr>,
 }
 
 impl FirstValue {
-  /// Create a new FIRST_VALUE window aggregate function
-  pub fn new(
-    expr: Arc<dyn PhysicalExpr>,
-    name: String,
-    data_type: DataType,
-  ) -> Result<Self> {
-    Self {
-      name,
-      expr,
-      data_type,
+    /// Create a new FIRST_VALUE window aggregate function
+    pub fn new(expr: Arc<dyn PhysicalExpr>, name: String, data_type: DataType) -> Self {
+        Self {
+            name,
+            data_type,
+            expr,
+        }
     }
-  }
 }
 
 impl BuiltInWindowFunctionExpr for FirstValue {
-  /// Return a reference to Any that can be used for downcasting
-  fn as_any(&self) -> &dyn Any {
-    self
-  }
+    /// Return a reference to Any that can be used for downcasting
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 
-  fn field(&self) -> Result<Field> {
-    let nullable = true;
-    Ok(Field::new(&self.name, self.data_type.clone(), nullable))
-  }
+    fn field(&self) -> Result<Field> {
+        let nullable = true;
+        Ok(Field::new(&self.name, self.data_type.clone(), nullable))
+    }
 
-  fn expressions(&self) -> Vec<Arc<dyn PhysicalExpr>> {
-    vec![self.expr.clone()]
-  }
+    fn expressions(&self) -> Vec<Arc<dyn PhysicalExpr>> {
+        vec![self.expr.clone()]
+    }
 
-  fn name(&self) -> &str {
-    &self.name
-  }
+    fn name(&self) -> &str {
+        &self.name
+    }
 
-  fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
-    Ok(Box::new(NthValueAccumulator::new(1, self.data_type)))
-  }
+    fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
+        Ok(Box::new(NthValueAccumulator::try_new(
+            1,
+            self.data_type.clone(),
+        )?))
+    }
 }
 
-const SPECIAL_USIZE_VALUE_FOR_LAST = 0usize;
+// sql values start with 1, so we can use 0 to indicate the special last value behavior
+const SPECIAL_USIZE_VALUE_FOR_LAST: usize = 0;
 
 /// last_value expression
 #[derive(Debug)]
 pub struct LastValue {
-  name: String,
-  data_type: DataType,
-  expr: Arc<dyn PhysicalExpr>,
+    name: String,
+    data_type: DataType,
+    expr: Arc<dyn PhysicalExpr>,
 }
 
 impl LastValue {
-  /// Create a new FIRST_VALUE window aggregate function
-  pub fn new(
-    expr: Arc<dyn PhysicalExpr>,
-    name: String,
-    data_type: DataType,
-  ) -> Result<Self> {
-    Self {
-      name,
-      expr,
-      data_type,
+    /// Create a new FIRST_VALUE window aggregate function
+    pub fn new(expr: Arc<dyn PhysicalExpr>, name: String, data_type: DataType) -> Self {
+        Self {
+            name,
+            data_type,
+            expr,
+        }
     }
-  }
 }
 
 impl BuiltInWindowFunctionExpr for LastValue {
-  /// Return a reference to Any that can be used for downcasting
-  fn as_any(&self) -> &dyn Any {
-    self
-  }
+    /// Return a reference to Any that can be used for downcasting
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 
-  fn field(&self) -> Result<Field> {
-    let nullable = true;
-    Ok(Field::new(&self.name, self.data_type.clone(), nullable))
-  }
+    fn field(&self) -> Result<Field> {
+        let nullable = true;
+        Ok(Field::new(&self.name, self.data_type.clone(), nullable))
+    }
 
-  fn expressions(&self) -> Vec<Arc<dyn PhysicalExpr>> {
-    vec![self.expr.clone()]
-  }
+    fn expressions(&self) -> Vec<Arc<dyn PhysicalExpr>> {
+        vec![self.expr.clone()]
+    }
 
-  fn name(&self) -> &str {
-    &self.name
-  }
+    fn name(&self) -> &str {
+        &self.name
+    }
 
-  fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
-    Ok(Box::new(NthValueAccumulator::new(
-      SPECIAL_USIZE_VALUE_FOR_LAST,
-      self.data_type,
-    )))
-  }
+    fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
+        Ok(Box::new(NthValueAccumulator::try_new(
+            SPECIAL_USIZE_VALUE_FOR_LAST,
+            self.data_type.clone(),
+        )?))
+    }
 }
 
 /// nth_value expression
 #[derive(Debug)]
 pub struct NthValue {
-  name: String,
-  n: usize,
-  data_type: DataType,
-  expr: Arc<dyn PhysicalExpr>,
-}
-
-impl NthValue {
-  /// Create a new NTH_VALUE window aggregate function
-  pub fn try_new(
-    expr: Arc<dyn PhysicalExpr>,
     name: String,
     n: usize,
     data_type: DataType,
-  ) -> Result<Self> {
-    if n == SPECIAL_USIZE_VALUE_FOR_LAST {
-      Err(DataFusionError::SQL(
-        "nth_value expect n to be > 0".to_owned(),
-      ))
-    } else {
-      Ok(Self {
-        name,
-        expr,
-        n,
-        data_type,
-      })
+    expr: Arc<dyn PhysicalExpr>,
+}
+
+impl NthValue {
+    /// Create a new NTH_VALUE window aggregate function
+    pub fn try_new(
+        expr: Arc<dyn PhysicalExpr>,
+        name: String,
+        n: usize,
+        data_type: DataType,
+    ) -> Result<Self> {
+        if n == SPECIAL_USIZE_VALUE_FOR_LAST {
+            Err(DataFusionError::Execution(
+                "nth_value expect n to be > 0".to_owned(),
+            ))
+        } else {
+            Ok(Self {
+                name,
+                n,
+                data_type,
+                expr,
+            })
+        }
     }
-  }
 }
 
 impl BuiltInWindowFunctionExpr for NthValue {
-  /// Return a reference to Any that can be used for downcasting
-  fn as_any(&self) -> &dyn Any {
-    self
-  }
+    /// Return a reference to Any that can be used for downcasting
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 
-  fn field(&self) -> Result<Field> {
-    let nullable = true;
-    Ok(Field::new(&self.name, self.data_type.clone(), nullable))
-  }
+    fn field(&self) -> Result<Field> {
+        let nullable = true;
+        Ok(Field::new(&self.name, self.data_type.clone(), nullable))
+    }
 
-  fn expressions(&self) -> Vec<Arc<dyn PhysicalExpr>> {
-    vec![self.expr.clone()]
-  }
+    fn expressions(&self) -> Vec<Arc<dyn PhysicalExpr>> {
+        vec![self.expr.clone()]
+    }
 
-  fn name(&self) -> &str {
-    &self.name
-  }
+    fn name(&self) -> &str {
+        &self.name
+    }
 
-  fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
-    Ok(Box::new(NthValueAccumulator::new(self.n, self.data_type)))
-  }
+    fn create_accumulator(&self) -> Result<Box<dyn WindowAccumulator>> {
+        Ok(Box::new(NthValueAccumulator::try_new(
+            self.n,
+            self.data_type.clone(),
+        )?))
+    }
 }
 
 #[derive(Debug)]
 struct NthValueAccumulator {
-  // n the target nth_value, however we'll reuse it for last_value acc, so when n == 0 it specifically
-  // means last
-  n: usize,
-  offset: usize,
-  value: ScalarValue,
+    // n the target nth_value, however we'll reuse it for last_value acc, so when n == 0 it specifically
+    // means last; also note that it is totally valid for n to be larger than the number of rows input
+    // in which case all the values shall be null
+    n: usize,
+    offset: usize,
+    value: ScalarValue,
 }
 
 impl NthValueAccumulator {
-  /// new count accumulator
-  pub fn new(n: usize, data_type: DataType) -> Self {
-    Self {
-      n,
-      offset: 0,
-      // null by default
-      value: ScalarValue::from(data_type),
+    /// new count accumulator
+    pub fn try_new(n: usize, data_type: DataType) -> Result<Self> {
+        Ok(Self {
+            n,
+            offset: 0,
+            // null value of that data_type by default
+            value: ScalarValue::try_from(&data_type)?,
+        })
     }
-  }
 }
 
 impl WindowAccumulator for NthValueAccumulator {
-  fn scan(&mut self, _values: &[ScalarValue]) -> Result<Option<ScalarValue>> {
-    if self.n == SPECIAL_USIZE_VALUE_FOR_LAST {
-      // for last_value function
-      self.value = Some(&values[0]);
-    } else if self.offset < self.n {
-      self.offset += 1;
-      if self.offset == self.n {
-        self.value = Some(&values[0]);
-      }
+    fn scan(&mut self, values: &[ScalarValue]) -> Result<Option<ScalarValue>> {
+        if self.n == SPECIAL_USIZE_VALUE_FOR_LAST {
+            // for last_value function
+            self.value = values[0].clone();
+        } else if self.offset < self.n {
+            self.offset += 1;
+            if self.offset == self.n {
+                self.value = values[0].clone();
+            }
+        }
+        Ok(Some(self.value.clone()))
     }
-    Ok(Some(self.value))
-  }
 
-  fn evaluate(&self) -> Result<Option<ScalarValue>> {
-    Ok(None)
-  }
+    fn evaluate(&self) -> Result<Option<ScalarValue>> {
+        Ok(None)
+    }
 }
