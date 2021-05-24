@@ -71,7 +71,8 @@ struct RowNumberAccumulator {
 impl RowNumberAccumulator {
     /// new count accumulator
     pub fn new() -> Self {
-        Self { row_number: 0 }
+        // row number is 1 based
+        Self { row_number: 1 }
     }
 }
 
@@ -82,9 +83,12 @@ impl WindowAccumulator for RowNumberAccumulator {
         Ok(result)
     }
 
-    fn scan_batch(&mut self, values: &[ArrayRef]) -> Result<Option<Vec<ScalarValue>>> {
-        let array = &values[0];
-        let new_row_number = self.row_number + array.len() as u64;
+    fn scan_batch(
+        &mut self,
+        num_rows: usize,
+        _values: &[ArrayRef],
+    ) -> Result<Option<Vec<ScalarValue>>> {
+        let new_row_number = self.row_number + (num_rows as u64);
         let result = (self.row_number..new_row_number)
             .map(|i| ScalarValue::UInt64(Some(i)))
             .collect();

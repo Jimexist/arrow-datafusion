@@ -354,7 +354,7 @@ fn window_aggregate_batch(
                 .map(|r| r.map(|v| v.into_array(batch.num_rows())))
                 .collect::<Result<Vec<_>>>()?;
 
-            window_acc.scan_batch(values)
+            window_acc.scan_batch(batch.num_rows(), values)
         })
         .into_iter()
         .collect::<Result<Vec<_>>>()
@@ -424,23 +424,15 @@ async fn compute_window_aggregate(
     let mut columns: Vec<ArrayRef> = accumulator
         .iter()
         .zip(aggregated_mapped)
-        .map(|(acc, agg)| {
-            let arr: ArrayRef = match (acc, agg) {
-                (acc, Some(scalar_value)) if acc.is_empty() => {
-                    scalar_value.to_array_of_size(total_num_rows)
-                }
-                (acc, None) if !acc.is_empty() => {
-                    return Err(DataFusionError::NotImplemented(
-                        "built in window function not yet implemented".to_owned(),
-                    ))
-                }
-                _ => {
-                    return Err(DataFusionError::Execution(
-                        "invalid window function behavior".to_owned(),
-                    ))
-                }
-            };
-            Ok(arr)
+        .map(|(acc, agg)| match (acc, agg) {
+            // either accumulator values or the aggregated values are non-empty, but not both
+            (acc, Some(scalar_value)) if acc.is_empty() => {
+                Ok(scalar_value.to_array_of_size(total_num_rows))
+            }
+            (acc, None) if !acc.is_empty() => ScalarValue::iter_to_array(acc),
+            _ => Err(DataFusionError::Execution(
+                "Invalid window function behavior".to_owned(),
+            )),
         })
         .collect::<Result<Vec<ArrayRef>>>()
         .map_err(DataFusionError::into_arrow_external_error)?;

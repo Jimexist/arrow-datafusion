@@ -559,12 +559,17 @@ pub trait WindowAccumulator: Send + Sync + Debug {
     fn scan(&mut self, values: &[ScalarValue]) -> Result<Option<ScalarValue>>;
 
     /// scans the accumulator's state from a vector of arrays.
-    fn scan_batch(&mut self, values: &[ArrayRef]) -> Result<Option<Vec<ScalarValue>>> {
+    fn scan_batch(
+        &mut self,
+        num_rows: usize,
+        values: &[ArrayRef],
+    ) -> Result<Option<Vec<ScalarValue>>> {
+        // note that for row_number and rank this might be different
         if values.is_empty() {
             return Ok(None);
         };
         // transpose columnar to row based so that we can apply window
-        let result: Vec<Option<ScalarValue>> = (0..values[0].len())
+        let result: Vec<Option<ScalarValue>> = (0..num_rows)
             .map(|index| {
                 let v = values
                     .iter()
