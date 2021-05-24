@@ -119,7 +119,7 @@ fn create_built_in_window_expr(
             Ok(Arc::new(LastValue::new(arg, name, data_type)))
         }
         _ => Err(DataFusionError::NotImplemented(format!(
-            "window function with {:?} not yet implemented",
+            "Window function with {:?} not yet implemented",
             fun
         ))),
     }
