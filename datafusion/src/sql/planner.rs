@@ -2909,11 +2909,11 @@ mod tests {
     fn over_order_by_with_window_frame_single_end() {
         let sql = "SELECT order_id, MAX(qty) OVER (ORDER BY order_id ROWS 3 PRECEDING), MIN(qty) OVER (ORDER BY order_id DESC) from orders";
         let expected = "\
-        Projection: #orders.order_id, #MAX(orders.qty) ROWS BETWEEN 3 PRECEDING AND CURRENT ROW, #MIN(orders.qty)\
-        \n  WindowAggr: windowExpr=[[MAX(#orders.qty) ROWS BETWEEN 3 PRECEDING AND CURRENT ROW]]\
-        \n    Sort: #orders.order_id ASC NULLS FIRST\
-        \n      WindowAggr: windowExpr=[[MIN(#orders.qty)]]\
-        \n        Sort: #orders.order_id DESC NULLS FIRST\
+        Projection: #order_id, #MAX(qty) RANGE [-3, =], #MIN(qty)\
+        \n  WindowAggr: windowExpr=[[MAX(#qty) RANGE [-3, =]]] partitionBy=[]\
+        \n    Sort: #order_id ASC NULLS FIRST\
+        \n      WindowAggr: windowExpr=[[MIN(#qty)]] partitionBy=[]\
+        \n        Sort: #order_id DESC NULLS FIRST\
         \n          TableScan: orders projection=None";
         quick_test(sql, expected);
     }
@@ -2954,11 +2954,11 @@ mod tests {
     fn over_order_by_with_window_frame_single_end_groups() {
         let sql = "SELECT order_id, MAX(qty) OVER (ORDER BY order_id GROUPS 3 PRECEDING), MIN(qty) OVER (ORDER BY order_id DESC) from orders";
         let expected = "\
-        Projection: #orders.order_id, #MAX(orders.qty) GROUPS BETWEEN 3 PRECEDING AND CURRENT ROW, #MIN(orders.qty)\
-        \n  WindowAggr: windowExpr=[[MAX(#orders.qty) GROUPS BETWEEN 3 PRECEDING AND CURRENT ROW]]\
-        \n    Sort: #orders.order_id ASC NULLS FIRST\
-        \n      WindowAggr: windowExpr=[[MIN(#orders.qty)]]\
-        \n        Sort: #orders.order_id DESC NULLS FIRST\
+        Projection: #order_id, #MAX(qty) GROUPS [-3, =], #MIN(qty)\
+        \n  WindowAggr: windowExpr=[[MAX(#qty) GROUPS [-3, =]]] partitionBy=[]\
+        \n    Sort: #order_id ASC NULLS FIRST\
+        \n      WindowAggr: windowExpr=[[MIN(#qty)]] partitionBy=[]\
+        \n        Sort: #order_id DESC NULLS FIRST\
         \n          TableScan: orders projection=None";
         quick_test(sql, expected);
     }

@@ -1460,7 +1460,7 @@ impl fmt::Debug for Expr {
                 if let Some(window_frame) = window_frame {
                     write!(
                         f,
-                        " {} BETWEEN {} AND {}",
+                        " {} [{}, {}]",
                         window_frame.units,
                         window_frame.start_bound,
                         window_frame.end_bound
