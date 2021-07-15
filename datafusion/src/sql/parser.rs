@@ -70,6 +70,49 @@ pub enum Statement {
     CreateExternalTable(CreateExternalTable),
 }
 
+/// Struct representing a limit (or lack thereof).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Limit(Option<usize>);
+
+impl Limit {
+    /// merge this limit with another usize
+    pub fn min(self, other: usize) -> usize {
+        self.0.map(|v| std::cmp::min(v, other)).unwrap_or(other)
+    }
+
+    /// less than or equal to the number of rows
+    pub fn leq(&self, num_rows: usize) -> bool {
+        self.0.map(|v| v <= num_rows).unwrap_or(false)
+    }
+
+    /// merge this limit with another
+    pub fn merge(self, other: Limit) -> Self {
+        match (self.0, other.0) {
+            (None, _) => other,
+            (Some(_), None) => self,
+            (Some(v1), Some(v2)) => Self(Some(std::cmp::min(v1, v2))),
+        }
+    }
+}
+
+impl Into<Option<usize>> for Limit {
+    fn into(self) -> Option<usize> {
+        self.0
+    }
+}
+
+impl From<usize> for Limit {
+    fn from(limit: usize) -> Self {
+        Self(Some(limit))
+    }
+}
+
+impl Default for Limit {
+    fn default() -> Self {
+        Self(None)
+    }
+}
+
 /// SQL Parser
 pub struct DFParser<'a> {
     parser: Parser<'a>,

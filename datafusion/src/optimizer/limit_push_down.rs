@@ -24,6 +24,7 @@ use crate::error::Result;
 use crate::execution::context::ExecutionProps;
 use crate::logical_plan::LogicalPlan;
 use crate::optimizer::optimizer::OptimizerRule;
+use crate::sql::parser::Limit;
 
 /// Optimization rule that tries pushes down LIMIT n
 /// where applicable to reduce the amount of scanned / processed data
@@ -36,47 +37,36 @@ impl LimitPushDown {
     }
 }
 
-fn limit_push_down(
-    upper_limit: Option<usize>,
-    plan: &LogicalPlan,
-) -> Result<LogicalPlan> {
-    match (plan, upper_limit) {
-        (LogicalPlan::Limit { n, input }, upper_limit) => {
-            let smallest = upper_limit.map(|x| std::cmp::min(x, *n)).unwrap_or(*n);
+fn limit_push_down(upper_limit: Limit, plan: &LogicalPlan) -> Result<LogicalPlan> {
+    match plan {
+        LogicalPlan::Limit { n, input } => {
+            let smallest = upper_limit.min(*n);
             Ok(LogicalPlan::Limit {
                 n: smallest,
                 // push down limit to plan (minimum of upper limit and current limit)
-                input: Arc::new(limit_push_down(Some(smallest), input.as_ref())?),
+                input: Arc::new(limit_push_down(smallest.into(), input.as_ref())?),
             })
         }
-        (
-            LogicalPlan::TableScan {
-                table_name,
-                source,
-                projection,
-                filters,
-                limit,
-                projected_schema,
-            },
-            Some(upper_limit),
-        ) => Ok(LogicalPlan::TableScan {
+        LogicalPlan::TableScan {
+            table_name,
+            source,
+            projection,
+            filters,
+            limit,
+            projected_schema,
+        } => Ok(LogicalPlan::TableScan {
             table_name: table_name.clone(),
             source: source.clone(),
             projection: projection.clone(),
             filters: filters.clone(),
-            limit: limit
-                .map(|x| std::cmp::min(x, upper_limit))
-                .or(Some(upper_limit)),
+            limit: limit.merge(upper_limit),
             projected_schema: projected_schema.clone(),
         }),
-        (
-            LogicalPlan::Projection {
-                expr,
-                input,
-                schema,
-            },
-            upper_limit,
-        ) => {
+        LogicalPlan::Projection {
+            expr,
+            input,
+            schema,
+        } => {
             // Push down limit directly (projection doesn't change number of rows)
             Ok(LogicalPlan::Projection {
                 expr: expr.clone(),
@@ -84,21 +74,18 @@ fn limit_push_down(
                 schema: schema.clone(),
             })
         }
-        (
-            LogicalPlan::Union {
-                inputs,
-                alias,
-                schema,
-            },
-            Some(upper_limit),
-        ) => {
+        LogicalPlan::Union {
+            inputs,
+            alias,
+            schema,
+        } => {
             // Push down limit through UNION
             let new_inputs = inputs
                 .iter()
                 .map(|x| {
                     Ok(LogicalPlan::Limit {
                         n: upper_limit,
-                        input: Arc::new(limit_push_down(Some(upper_limit), x)?),
+                        input: Arc::new(limit_push_down(upper_limit, x)?),
                     })
                 })
                 .collect::<Result<_>>()?;
@@ -117,7 +104,7 @@ fn limit_push_down(
             let inputs = plan.inputs();
             let new_inputs = inputs
                 .iter()
-                .map(|plan| limit_push_down(None, plan))
+                .map(|plan| limit_push_down(Default::default(), plan))
                 .collect::<Result<Vec<_>>>()?;
 
             utils::from_plan(plan, &expr, &new_inputs)
@@ -127,7 +114,7 @@ fn limit_push_down(
 
 impl OptimizerRule for LimitPushDown {
     fn optimize(&self, plan: &LogicalPlan, _: &ExecutionProps) -> Result<LogicalPlan> {
-        limit_push_down(None, plan)
+        limit_push_down(Default::default(), plan)
     }
 
     fn name(&self) -> &str {

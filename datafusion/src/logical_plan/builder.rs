@@ -205,7 +205,7 @@ impl LogicalPlanBuilder {
             projected_schema: Arc::new(projected_schema),
             projection,
             filters: vec![],
-            limit: None,
+            limit: Default::default(),
         };
 
         Ok(Self::from(table_scan))

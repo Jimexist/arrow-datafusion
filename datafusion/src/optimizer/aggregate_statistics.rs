@@ -182,7 +182,7 @@ mod tests {
             _projection: &Option<Vec<usize>>,
             _batch_size: usize,
             _filters: &[Expr],
-            _limit: Option<usize>,
+            _limit: Limit,
         ) -> Result<std::sync::Arc<dyn crate::physical_plan::ExecutionPlan>> {
             unimplemented!()
         }

@@ -17,12 +17,9 @@
 
 //! Execution plan for reading Parquet files
 
-use std::fmt;
-use std::fs::File;
-use std::sync::Arc;
-use std::task::{Context, Poll};
-use std::{any::Any, convert::TryInto};
-
+use super::SQLMetric;
+use crate::datasource::datasource::{ColumnStatistics, Statistics};
+use crate::sql::parser::Limit;
 use crate::{
     error::{DataFusionError, Result},
     logical_plan::{Column, Expr},
@@ -33,35 +30,33 @@ use crate::{
     },
     scalar::ScalarValue,
 };
-
 use arrow::{
     array::ArrayRef,
     datatypes::{Schema, SchemaRef},
     error::{ArrowError, Result as ArrowResult},
     record_batch::RecordBatch,
 };
+use async_trait::async_trait;
+use fmt::Debug;
+use futures::stream::{Stream, StreamExt};
 use hashbrown::HashMap;
 use log::debug;
+use parquet::arrow::{ArrowReader, ParquetFileArrowReader};
 use parquet::file::{
     metadata::RowGroupMetaData,
     reader::{FileReader, SerializedFileReader},
     statistics::Statistics as ParquetStatistics,
 };
-
-use fmt::Debug;
-use parquet::arrow::{ArrowReader, ParquetFileArrowReader};
-
+use std::fmt;
+use std::fs::File;
+use std::sync::Arc;
+use std::task::{Context, Poll};
+use std::{any::Any, convert::TryInto};
 use tokio::{
     sync::mpsc::{channel, Receiver, Sender},
     task,
 };
 use tokio_stream::wrappers::ReceiverStream;
-
-use crate::datasource::datasource::{ColumnStatistics, Statistics};
-use async_trait::async_trait;
-use futures::stream::{Stream, StreamExt};
-
-use super::SQLMetric;
 
 /// Execution plan for scanning one or more Parquet partitions
 #[derive(Debug, Clone)]
@@ -81,7 +76,7 @@ pub struct ParquetExec {
     /// Optional predicate builder
     predicate_builder: Option<PruningPredicate>,
     /// Optional limit of the number of rows
-    limit: Option<usize>,
+    limit: Limit,
 }
 
 /// Represents one partition of a Parquet data set and this currently means one Parquet file.
@@ -128,7 +123,7 @@ impl ParquetExec {
         predicate: Option<Expr>,
         batch_size: usize,
         max_concurrency: usize,
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<Self> {
         // build a list of filenames from the specified path, which could be a single file or
         // a directory containing one or more parquet files
@@ -162,7 +157,7 @@ impl ParquetExec {
         predicate: Option<Expr>,
         batch_size: usize,
         max_concurrency: usize,
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<Self> {
         debug!("Creating ParquetExec, filenames: {:?}, projection {:?}, predicate: {:?}, limit: {:?}",
                filenames, projection, predicate, limit);
@@ -207,7 +202,7 @@ impl ParquetExec {
                     for (i, cnt) in columns_null_counts.enumerate() {
                         null_counts[i] += cnt
                     }
-                    if limit.map(|x| num_rows >= x as i64).unwrap_or(false) {
+                    if limit.leq(num_rows as usize) {
                         limit_exhausted = true;
                         break;
                     }
@@ -283,7 +278,7 @@ impl ParquetExec {
         metrics: ParquetExecMetrics,
         predicate_builder: Option<PruningPredicate>,
         batch_size: usize,
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Self {
         let projection = match projection {
             Some(p) => p,
@@ -668,7 +663,7 @@ fn read_files(
     predicate_builder: &Option<PruningPredicate>,
     batch_size: usize,
     response_tx: Sender<ArrowResult<RecordBatch>>,
-    limit: Option<usize>,
+    limit: Limit,
 ) -> Result<()> {
     let mut total_rows = 0;
     'outer: for filename in filenames {
@@ -690,7 +685,7 @@ fn read_files(
                 Some(Ok(batch)) => {
                     total_rows += batch.num_rows();
                     send_result(&response_tx, Ok(batch))?;
-                    if limit.map(|l| total_rows >= l).unwrap_or(false) {
+                    if limit.leq(total_rows) {
                         break 'outer;
                     }
                 }

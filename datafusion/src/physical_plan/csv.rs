@@ -20,6 +20,7 @@
 use crate::error::{DataFusionError, Result};
 use crate::physical_plan::ExecutionPlan;
 use crate::physical_plan::{common, source::Source, Partitioning};
+use crate::sql::parser::Limit;
 use arrow::csv;
 use arrow::datatypes::{Schema, SchemaRef};
 use arrow::error::Result as ArrowResult;
@@ -127,7 +128,7 @@ pub struct CsvExec {
     /// Batch size
     batch_size: usize,
     /// Limit in nr. of rows
-    limit: Option<usize>,
+    limit: Limit,
 }
 
 impl CsvExec {
@@ -137,7 +138,7 @@ impl CsvExec {
         options: CsvReadOptions,
         projection: Option<Vec<usize>>,
         batch_size: usize,
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<Self> {
         let file_extension = String::from(options.file_extension);
 
@@ -181,7 +182,7 @@ impl CsvExec {
         options: CsvReadOptions,
         projection: Option<Vec<usize>>,
         batch_size: usize,
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<Self> {
         let schema = match options.schema {
             Some(s) => s.clone(),
@@ -252,7 +253,7 @@ impl CsvExec {
     }
 
     /// Limit
-    pub fn limit(&self) -> Option<usize> {
+    pub fn limit(&self) -> Limit {
         self.limit
     }
 
@@ -379,7 +380,7 @@ impl CsvStream<File> {
         delimiter: Option<u8>,
         projection: &Option<Vec<usize>>,
         batch_size: usize,
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<Self> {
         let file = File::open(filename)?;
         Self::try_new_from_reader(
@@ -396,7 +397,7 @@ impl<R: Read> CsvStream<R> {
         delimiter: Option<u8>,
         projection: &Option<Vec<usize>>,
         batch_size: usize,
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<CsvStream<R>> {
         let start_line = if has_header { 1 } else { 0 };
         let bounds = limit.map(|x| (0, x + start_line));

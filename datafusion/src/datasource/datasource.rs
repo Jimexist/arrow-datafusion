@@ -17,13 +17,13 @@
 
 //! Data source traits
 
-use std::any::Any;
-use std::sync::Arc;
-
 use crate::error::Result;
 use crate::logical_plan::Expr;
 use crate::physical_plan::ExecutionPlan;
+use crate::sql::parser::Limit;
 use crate::{arrow::datatypes::SchemaRef, scalar::ScalarValue};
+use std::any::Any;
+use std::sync::Arc;
 
 /// This table statistics are estimates.
 /// It can not be used directly in the precise compute
@@ -101,7 +101,7 @@ pub trait TableProvider: Sync + Send {
         // from the datasource as a performance optimization.
         // If set, it contains the amount of rows needed by the `LogicalPlan`,
         // The datasource should return *at least* this number of rows if available.
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<Arc<dyn ExecutionPlan>>;
 
     /// Returns the table Statistics

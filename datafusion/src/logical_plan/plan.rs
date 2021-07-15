@@ -24,6 +24,7 @@ use crate::datasource::TableProvider;
 use crate::error::DataFusionError;
 use crate::logical_plan::dfschema::DFSchemaRef;
 use crate::sql::parser::FileType;
+use crate::sql::parser::Limit;
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use std::{
     collections::HashSet,
@@ -172,7 +173,7 @@ pub enum LogicalPlan {
         /// Optional expressions to be used as filters by the table provider
         filters: Vec<Expr>,
         /// Optional limit to skip reading
-        limit: Option<usize>,
+        limit: Limit,
     },
     /// Produces no rows: An empty relation with an empty schema
     EmptyRelation {
@@ -702,7 +703,7 @@ impl LogicalPlan {
                             write!(f, ", filters={:?}", filters)?;
                         }
 
-                        if let Some(n) = limit {
+                        if let Some(n) = limit.into::<Option<usize>>() {
                             write!(f, ", limit={}", n)?;
                         }
 

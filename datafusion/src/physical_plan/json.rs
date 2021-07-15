@@ -16,11 +16,9 @@
 // under the License.
 
 //! Execution plan for reading line-delimited JSON files
-use async_trait::async_trait;
-use futures::Stream;
-
 use super::{common, source::Source, ExecutionPlan, Partitioning, RecordBatchStream};
 use crate::error::{DataFusionError, Result};
+use crate::sql::parser::Limit;
 use arrow::json::reader::{infer_json_schema_from_iterator, ValueIter};
 use arrow::{
     datatypes::{Schema, SchemaRef},
@@ -28,6 +26,8 @@ use arrow::{
     json,
     record_batch::RecordBatch,
 };
+use async_trait::async_trait;
+use futures::Stream;
 use std::fs::File;
 use std::{any::Any, io::Seek};
 use std::{
@@ -73,7 +73,7 @@ pub struct NdJsonExec {
     projected_schema: SchemaRef,
     file_extension: String,
     batch_size: usize,
-    limit: Option<usize>,
+    limit: Limit,
 }
 
 impl NdJsonExec {
@@ -83,7 +83,7 @@ impl NdJsonExec {
         options: NdJsonReadOptions,
         projection: Option<Vec<usize>>,
         batch_size: usize,
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<Self> {
         let file_extension = options.file_extension.to_string();
 
@@ -131,7 +131,7 @@ impl NdJsonExec {
         options: NdJsonReadOptions,
         projection: Option<Vec<usize>>,
         batch_size: usize,
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<Self> {
         let schema = match options.schema {
             Some(s) => s,
@@ -192,7 +192,7 @@ impl NdJsonExec {
     }
 
     /// Limit
-    pub fn limit(&self) -> Option<usize> {
+    pub fn limit(&self) -> Limit {
         self.limit
     }
 
@@ -319,10 +319,10 @@ struct NdJsonStream<R: Read> {
 }
 
 impl<R: Read> NdJsonStream<R> {
-    fn new(reader: json::Reader<R>, limit: Option<usize>) -> Self {
+    fn new(reader: json::Reader<R>, limit: Limit) -> Self {
         Self {
             reader,
-            remain: limit,
+            remain: limit.into(),
         }
     }
 }

@@ -17,20 +17,18 @@
 
 //! Parquet data source
 
-use std::any::Any;
-use std::string::String;
-use std::sync::Arc;
-
-use arrow::datatypes::*;
-
+use super::datasource::TableProviderFilterPushDown;
 use crate::datasource::datasource::Statistics;
 use crate::datasource::TableProvider;
 use crate::error::Result;
 use crate::logical_plan::{combine_filters, Expr};
 use crate::physical_plan::parquet::ParquetExec;
 use crate::physical_plan::ExecutionPlan;
-
-use super::datasource::TableProviderFilterPushDown;
+use crate::sql::parser::Limit;
+use arrow::datatypes::*;
+use std::any::Any;
+use std::string::String;
+use std::sync::Arc;
 
 /// Table-based representation of a `ParquetFile`.
 pub struct ParquetTable {
@@ -44,7 +42,8 @@ impl ParquetTable {
     /// Attempt to initialize a new `ParquetTable` from a file path.
     pub fn try_new(path: impl Into<String>, max_concurrency: usize) -> Result<Self> {
         let path = path.into();
-        let parquet_exec = ParquetExec::try_from_path(&path, None, None, 0, 1, None)?;
+        let parquet_exec =
+            ParquetExec::try_from_path(&path, None, None, 0, 1, Default::default())?;
         let schema = parquet_exec.schema();
         Ok(Self {
             path,
@@ -84,16 +83,14 @@ impl TableProvider for ParquetTable {
         projection: &Option<Vec<usize>>,
         batch_size: usize,
         filters: &[Expr],
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<Arc<dyn ExecutionPlan>> {
         let predicate = combine_filters(filters);
         Ok(Arc::new(ParquetExec::try_from_path(
             &self.path,
             projection.clone(),
             predicate,
-            limit
-                .map(|l| std::cmp::min(l, batch_size))
-                .unwrap_or(batch_size),
+            limit.min(batch_size),
             self.max_concurrency,
             limit,
         )?))

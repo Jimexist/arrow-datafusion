@@ -20,12 +20,7 @@
 //! This data source allows Line-delimited JSON string or files to be used as input for queries.
 //!
 
-use std::{
-    any::Any,
-    io::{BufReader, Read, Seek},
-    sync::{Arc, Mutex},
-};
-
+use crate::sql::parser::Limit;
 use crate::{
     datasource::{Source, TableProvider},
     error::{DataFusionError, Result},
@@ -36,6 +31,11 @@ use crate::{
     },
 };
 use arrow::{datatypes::SchemaRef, json::reader::infer_json_schema_from_seekable};
+use std::{
+    any::Any,
+    io::{BufReader, Read, Seek},
+    sync::{Arc, Mutex},
+};
 
 use super::datasource::Statistics;
 
@@ -120,17 +120,14 @@ impl TableProvider for NdJsonFile {
         projection: &Option<Vec<usize>>,
         batch_size: usize,
         _filters: &[crate::logical_plan::Expr],
-        limit: Option<usize>,
+        limit: Limit,
     ) -> Result<Arc<dyn ExecutionPlan>> {
         let opts = NdJsonReadOptions {
             schema: Some(self.schema.clone()),
             schema_infer_max_records: 0, // schema will always be provided, so it's unnecessary to infer schema
             file_extension: self.file_extension.as_str(),
         };
-        let batch_size = limit
-            .map(|l| std::cmp::min(l, batch_size))
-            .unwrap_or(batch_size);
-
+        let batch_size = limit.min(batch_size);
         let exec = match &self.source {
             Source::Reader(maybe_reader) => {
                 if let Some(rdr) = maybe_reader.lock().unwrap().take() {

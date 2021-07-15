@@ -19,13 +19,13 @@
 //! queried by DataFusion. This allows data to be pre-loaded into memory and then
 //! repeatedly queried without incurring additional file I/O overhead.
 
+use crate::sql::parser::Limit;
+use arrow::datatypes::{Field, Schema, SchemaRef};
+use arrow::record_batch::RecordBatch;
 use futures::StreamExt;
 use log::debug;
 use std::any::Any;
 use std::sync::Arc;
-
-use arrow::datatypes::{Field, Schema, SchemaRef};
-use arrow::record_batch::RecordBatch;
 
 use crate::datasource::TableProvider;
 use crate::error::{DataFusionError, Result};
@@ -115,7 +115,7 @@ impl MemTable {
         output_partitions: Option<usize>,
     ) -> Result<Self> {
         let schema = t.schema();
-        let exec = t.scan(&None, batch_size, &[], None)?;
+        let exec = t.scan(&None, batch_size, &[], Default::default())?;
         let partition_count = exec.output_partitioning().partition_count();
 
         let tasks = (0..partition_count)
@@ -177,7 +177,7 @@ impl TableProvider for MemTable {
         projection: &Option<Vec<usize>>,
         _batch_size: usize,
         _filters: &[Expr],
-        _limit: Option<usize>,
+        _limit: Limit,
     ) -> Result<Arc<dyn ExecutionPlan>> {
         let columns: Vec<usize> = match projection {
             Some(p) => p.clone(),
