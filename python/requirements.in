@@ -25,3 +25,5 @@ pandas
 pyarrow
 pytest
 toml
+sphinx
+myst-parser
