@@ -18,8 +18,6 @@
 #[macro_use]
 extern crate criterion;
 
-
-
 mod data_utils;
 use crate::criterion::Criterion;
 use data_utils::create_table_provider;

@@ -21,7 +21,6 @@ use criterion::Criterion;
 
 use std::sync::{Arc, Mutex};
 
-
 use datafusion;
 
 use arrow::datatypes::{DataType, Field, Schema};

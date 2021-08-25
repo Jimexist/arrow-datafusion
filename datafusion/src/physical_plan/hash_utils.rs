@@ -42,7 +42,11 @@ pub type JoinOnRef<'a> = &'a [(Column, Column)];
 
 /// Checks whether the schemas "left" and "right" and columns "on" represent a valid join.
 /// They are valid whenever their columns' intersection equals the set `on`
-pub fn check_join_is_valid(left: &Schema, right: &Schema, on: JoinOnRef<'_>) -> Result<()> {
+pub fn check_join_is_valid(
+    left: &Schema,
+    right: &Schema,
+    on: JoinOnRef<'_>,
+) -> Result<()> {
     let left: HashSet<Column> = left
         .fields()
         .iter()

@@ -23,9 +23,6 @@ use std::sync::{Arc, Mutex};
 
 use tokio::runtime::Runtime;
 
-
-
-
 use arrow::{
     array::{Float32Array, Float64Array},
     datatypes::{DataType, Field, Schema},

@@ -19,8 +19,6 @@
 extern crate criterion;
 use criterion::{BatchSize, Criterion};
 
-
-
 use std::{iter::FromIterator, sync::Arc};
 
 use arrow::{

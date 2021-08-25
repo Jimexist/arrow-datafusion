@@ -210,8 +210,6 @@
 //! cargo run --example simple_udf
 //! ```
 
-
-
 pub mod catalog;
 pub mod dataframe;
 pub mod datasource;

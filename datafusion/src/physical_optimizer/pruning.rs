@@ -643,7 +643,9 @@ fn build_predicate_expression(
     Ok(statistics_expr)
 }
 
-fn build_statistics_expr(expr_builder: &mut PruningExpressionBuilder<'_>) -> Result<Expr> {
+fn build_statistics_expr(
+    expr_builder: &mut PruningExpressionBuilder<'_>,
+) -> Result<Expr> {
     let statistics_expr =
         match expr_builder.op() {
             Operator::NotEq => {

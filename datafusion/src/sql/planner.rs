@@ -69,7 +69,10 @@ use super::{
 /// functions referenced in SQL statements
 pub trait ContextProvider {
     /// Getter for a datasource
-    fn get_table_provider(&self, name: TableReference<'_>) -> Option<Arc<dyn TableProvider>>;
+    fn get_table_provider(
+        &self,
+        name: TableReference<'_>,
+    ) -> Option<Arc<dyn TableProvider>>;
     /// Getter for a UDF description
     fn get_function_meta(&self, name: &str) -> Option<Arc<ScalarUDF>>;
     /// Getter for a UDAF description

@@ -904,7 +904,10 @@ impl ExecutionContextState {
 }
 
 impl ContextProvider for ExecutionContextState {
-    fn get_table_provider(&self, name: TableReference<'_>) -> Option<Arc<dyn TableProvider>> {
+    fn get_table_provider(
+        &self,
+        name: TableReference<'_>,
+    ) -> Option<Arc<dyn TableProvider>> {
         let resolved_ref = self.resolve_table_ref(name);
         let schema = self.schema_for_ref(resolved_ref).ok()?;
         schema.table(resolved_ref.table)
