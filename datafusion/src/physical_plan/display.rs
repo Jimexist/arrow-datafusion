@@ -85,7 +85,7 @@ impl<'a> DisplayableExecutionPlan<'a> {
             show_metrics: ShowMetrics,
         }
         impl<'a> fmt::Display for Wrapper<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let t = DisplayFormatType::Default;
                 let mut visitor = IndentVisitor {
                     t,

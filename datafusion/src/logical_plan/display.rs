@@ -97,7 +97,7 @@ pub fn display_schema(schema: &Schema) -> impl fmt::Display + '_ {
     struct Wrapper<'a>(&'a Schema);
 
     impl<'a> fmt::Display for Wrapper<'a> {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "[")?;
             for (idx, field) in self.0.fields().iter().enumerate() {
                 if idx > 0 {
@@ -131,14 +131,14 @@ impl GraphvizBuilder {
     }
 
     // write out the start of the subgraph cluster
-    fn start_cluster(&mut self, f: &mut fmt::Formatter, title: &str) -> fmt::Result {
+    fn start_cluster(&mut self, f: &mut fmt::Formatter<'_>, title: &str) -> fmt::Result {
         writeln!(f, "  subgraph cluster_{}", self.next_id())?;
         writeln!(f, "  {{")?;
         writeln!(f, "    graph[label={}]", Self::quoted(title))
     }
 
     // write out the end of the subgraph cluster
-    fn end_cluster(&mut self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn end_cluster(&mut self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "  }}")
     }
 

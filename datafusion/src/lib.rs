@@ -210,7 +210,7 @@
 //! cargo run --example simple_udf
 //! ```
 
-extern crate sqlparser;
+
 
 pub mod catalog;
 pub mod dataframe;

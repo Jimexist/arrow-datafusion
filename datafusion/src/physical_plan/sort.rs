@@ -168,7 +168,7 @@ impl ExecutionPlan for SortExec {
     fn fmt_as(
         &self,
         t: DisplayFormatType,
-        f: &mut std::fmt::Formatter,
+        f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match t {
             DisplayFormatType::Default => {

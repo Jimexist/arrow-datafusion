@@ -62,7 +62,7 @@ pub enum AggregateFunction {
 }
 
 impl fmt::Display for AggregateFunction {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // uppercase of the debug.
         write!(f, "{}", format!("{:?}", self).to_uppercase())
     }

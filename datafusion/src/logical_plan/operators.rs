@@ -55,7 +55,7 @@ pub enum Operator {
 }
 
 impl fmt::Display for Operator {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let display = match &self {
             Operator::Eq => "=",
             Operator::NotEq => "!=",

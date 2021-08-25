@@ -147,7 +147,7 @@ pub trait ExecutionPlan: Debug + Send + Sync {
     ///
     /// Note this function prints a placeholder by default to preserve
     /// backwards compatibility.
-    fn fmt_as(&self, _t: DisplayFormatType, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt_as(&self, _t: DisplayFormatType, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ExecutionPlan(PlaceHolder)")
     }
 }

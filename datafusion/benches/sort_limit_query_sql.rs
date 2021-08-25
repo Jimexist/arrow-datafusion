@@ -21,8 +21,8 @@ use criterion::Criterion;
 
 use std::sync::{Arc, Mutex};
 
-extern crate arrow;
-extern crate datafusion;
+
+use datafusion;
 
 use arrow::datatypes::{DataType, Field, Schema};
 

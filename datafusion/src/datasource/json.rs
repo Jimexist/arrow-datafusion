@@ -53,7 +53,7 @@ pub struct NdJsonFile {
 
 impl NdJsonFile {
     /// Attempt to initialize a `NdJsonFile` from a path. The schema can be inferred automatically.
-    pub fn try_new(path: &str, options: NdJsonReadOptions) -> Result<Self> {
+    pub fn try_new(path: &str, options: NdJsonReadOptions<'_>) -> Result<Self> {
         let schema = if let Some(schema) = options.schema {
             schema
         } else {
@@ -84,7 +84,7 @@ impl NdJsonFile {
     /// Attempt to initialize a `NdJsonFile` from a reader impls `Seek`. The schema can be inferred automatically.
     pub fn try_new_from_reader<R: Read + Seek + Send + Sync + 'static>(
         mut reader: R,
-        options: NdJsonReadOptions,
+        options: NdJsonReadOptions<'_>,
     ) -> Result<Self> {
         let schema = if let Some(schema) = options.schema {
             schema

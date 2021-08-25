@@ -24,8 +24,8 @@ use std::sync::Arc;
 use chrono::prelude::*;
 use chrono::Duration;
 
-extern crate arrow;
-extern crate datafusion;
+use arrow;
+use datafusion;
 
 use arrow::{array::*, datatypes::TimeUnit};
 use arrow::{datatypes::Int32Type, datatypes::Int64Type, record_batch::RecordBatch};

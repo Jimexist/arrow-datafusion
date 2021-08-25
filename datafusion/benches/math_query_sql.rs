@@ -23,8 +23,8 @@ use std::sync::{Arc, Mutex};
 
 use tokio::runtime::Runtime;
 
-extern crate arrow;
-extern crate datafusion;
+
+
 
 use arrow::{
     array::{Float32Array, Float64Array},

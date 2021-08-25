@@ -63,7 +63,7 @@ impl FromStr for WindowFunction {
 }
 
 impl fmt::Display for BuiltInWindowFunction {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             BuiltInWindowFunction::RowNumber => write!(f, "ROW_NUMBER"),
             BuiltInWindowFunction::Rank => write!(f, "RANK"),
@@ -81,7 +81,7 @@ impl fmt::Display for BuiltInWindowFunction {
 }
 
 impl fmt::Display for WindowFunction {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             WindowFunction::AggregateFunction(fun) => fun.fmt(f),
             WindowFunction::BuiltInWindowFunction(fun) => fun.fmt(f),

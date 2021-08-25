@@ -70,7 +70,7 @@ impl CastExpr {
 }
 
 impl fmt::Display for CastExpr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "CAST({} AS {:?})", self.expr, self.cast_type)
     }
 }

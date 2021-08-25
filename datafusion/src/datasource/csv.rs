@@ -59,7 +59,7 @@ pub struct CsvFile {
 
 impl CsvFile {
     /// Attempt to initialize a new `CsvFile` from a file path
-    pub fn try_new(path: impl Into<String>, options: CsvReadOptions) -> Result<Self> {
+    pub fn try_new(path: impl Into<String>, options: CsvReadOptions<'_>) -> Result<Self> {
         let path = path.into();
         let schema = Arc::new(match options.schema {
             Some(s) => s.clone(),
@@ -89,7 +89,7 @@ impl CsvFile {
     /// Attempt to initialize a `CsvFile` from a reader. The schema MUST be provided in options.
     pub fn try_new_from_reader<R: Read + Send + Sync + 'static>(
         reader: R,
-        options: CsvReadOptions,
+        options: CsvReadOptions<'_>,
     ) -> Result<Self> {
         let schema = Arc::new(match options.schema {
             Some(s) => s.clone(),
@@ -113,7 +113,7 @@ impl CsvFile {
     /// Attempt to initialize a `CsvRead` from a reader impls `Seek`. The schema can be inferred automatically.
     pub fn try_new_from_reader_infer_schema<R: Read + Seek + Send + Sync + 'static>(
         mut reader: R,
-        options: CsvReadOptions,
+        options: CsvReadOptions<'_>,
     ) -> Result<Self> {
         let schema = Arc::new(match options.schema {
             Some(s) => s.clone(),

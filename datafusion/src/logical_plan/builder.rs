@@ -115,7 +115,7 @@ impl LogicalPlanBuilder {
     /// Scan a CSV data source
     pub fn scan_csv(
         path: impl Into<String>,
-        options: CsvReadOptions,
+        options: CsvReadOptions<'_>,
         projection: Option<Vec<usize>>,
     ) -> Result<Self> {
         let path = path.into();
@@ -125,7 +125,7 @@ impl LogicalPlanBuilder {
     /// Scan a CSV data source and register it with a given table name
     pub fn scan_csv_with_name(
         path: impl Into<String>,
-        options: CsvReadOptions,
+        options: CsvReadOptions<'_>,
         projection: Option<Vec<usize>>,
         table_name: impl Into<String>,
     ) -> Result<Self> {

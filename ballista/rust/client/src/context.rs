@@ -150,7 +150,7 @@ impl BallistaContext {
     pub fn read_csv(
         &self,
         path: &str,
-        options: CsvReadOptions,
+        options: CsvReadOptions<'_>,
     ) -> Result<Arc<dyn DataFrame>> {
         // convert to absolute path because the executor likely has a different working directory
         let path = PathBuf::from(path);
@@ -182,7 +182,7 @@ impl BallistaContext {
         &self,
         name: &str,
         path: &str,
-        options: CsvReadOptions,
+        options: CsvReadOptions<'_>,
     ) -> Result<()> {
         let df = self.read_csv(path, options)?;
         self.register_table(name, df.as_ref())

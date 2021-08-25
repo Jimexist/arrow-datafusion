@@ -237,7 +237,7 @@ impl BuiltinScalarFunction {
 }
 
 impl fmt::Display for BuiltinScalarFunction {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // lowercase of the debug.
         write!(f, "{}", format!("{:?}", self).to_lowercase())
     }
@@ -1331,7 +1331,7 @@ impl ScalarFunctionExpr {
 }
 
 impl fmt::Display for ScalarFunctionExpr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}({})",

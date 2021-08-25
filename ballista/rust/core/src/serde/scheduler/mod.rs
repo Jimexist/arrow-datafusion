@@ -119,7 +119,7 @@ impl Default for PartitionStats {
 }
 
 impl fmt::Display for PartitionStats {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "numBatches={:?}, numRows={:?}, numBytes={:?}",

@@ -560,7 +560,7 @@ impl LogicalPlan {
         // that that can be formatted
         struct Wrapper<'a>(&'a LogicalPlan);
         impl<'a> fmt::Display for Wrapper<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let with_schema = false;
                 let mut visitor = IndentVisitor::new(f, with_schema);
                 self.0.accept(&mut visitor).unwrap();
@@ -601,7 +601,7 @@ impl LogicalPlan {
         // that that can be formatted
         struct Wrapper<'a>(&'a LogicalPlan);
         impl<'a> fmt::Display for Wrapper<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let with_schema = true;
                 let mut visitor = IndentVisitor::new(f, with_schema);
                 self.0.accept(&mut visitor).unwrap();
@@ -645,7 +645,7 @@ impl LogicalPlan {
         // that that can be formatted
         struct Wrapper<'a>(&'a LogicalPlan);
         impl<'a> fmt::Display for Wrapper<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 writeln!(
                     f,
                     "// Begin DataFusion GraphViz Plan (see https://graphviz.org)"
@@ -697,7 +697,7 @@ impl LogicalPlan {
         // that that can be formatted
         struct Wrapper<'a>(&'a LogicalPlan);
         impl<'a> fmt::Display for Wrapper<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 match &*self.0 {
                     LogicalPlan::EmptyRelation { .. } => write!(f, "EmptyRelation"),
                     LogicalPlan::TableScan {
@@ -816,7 +816,7 @@ impl LogicalPlan {
 }
 
 impl fmt::Debug for LogicalPlan {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.display_indent().fmt(f)
     }
 }

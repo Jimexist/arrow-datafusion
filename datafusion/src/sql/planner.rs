@@ -69,7 +69,7 @@ use super::{
 /// functions referenced in SQL statements
 pub trait ContextProvider {
     /// Getter for a datasource
-    fn get_table_provider(&self, name: TableReference) -> Option<Arc<dyn TableProvider>>;
+    fn get_table_provider(&self, name: TableReference<'_>) -> Option<Arc<dyn TableProvider>>;
     /// Getter for a UDF description
     fn get_function_meta(&self, name: &str) -> Option<Arc<ScalarUDF>>;
     /// Getter for a UDAF description
@@ -3476,7 +3476,7 @@ mod tests {
     impl ContextProvider for MockContextProvider {
         fn get_table_provider(
             &self,
-            name: TableReference,
+            name: TableReference<'_>,
         ) -> Option<Arc<dyn TableProvider>> {
             let schema = match name.table() {
                 "person" => Some(Schema::new(vec![

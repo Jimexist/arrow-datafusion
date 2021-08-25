@@ -80,7 +80,7 @@ impl NdJsonExec {
     /// Create a new execution plan for reading from a path
     pub fn try_new(
         path: &str,
-        options: NdJsonReadOptions,
+        options: NdJsonReadOptions<'_>,
         projection: Option<Vec<usize>>,
         batch_size: usize,
         limit: Option<usize>,
@@ -128,7 +128,7 @@ impl NdJsonExec {
     /// Create a new execution plan for reading from a reader
     pub fn try_new_from_reader(
         reader: impl Read + Seek + Send + Sync + 'static,
-        options: NdJsonReadOptions,
+        options: NdJsonReadOptions<'_>,
         projection: Option<Vec<usize>>,
         batch_size: usize,
         limit: Option<usize>,

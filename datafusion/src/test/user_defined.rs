@@ -36,7 +36,7 @@ struct TestUserDefinedPlanNode {
 }
 
 impl Debug for TestUserDefinedPlanNode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.fmt_for_explain(f)
     }
 }
@@ -58,7 +58,7 @@ impl UserDefinedLogicalNode for TestUserDefinedPlanNode {
         vec![]
     }
 
-    fn fmt_for_explain(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt_for_explain(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "TestUserDefined")
     }
 

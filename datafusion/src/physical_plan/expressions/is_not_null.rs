@@ -48,7 +48,7 @@ impl IsNotNullExpr {
 }
 
 impl std::fmt::Display for IsNotNullExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} IS NOT NULL", self.arg)
     }
 }

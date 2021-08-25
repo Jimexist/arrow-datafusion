@@ -271,7 +271,7 @@ struct TopKPlanNode {
 impl Debug for TopKPlanNode {
     /// For TopK, use explain format for the Debug format. Other types
     /// of nodes may
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.fmt_for_explain(f)
     }
 }
@@ -295,7 +295,7 @@ impl UserDefinedLogicalNode for TopKPlanNode {
     }
 
     /// For example: `TopK: k=10`
-    fn fmt_for_explain(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt_for_explain(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "TopK: k={}", self.k)
     }
 
@@ -352,7 +352,7 @@ struct TopKExec {
 }
 
 impl Debug for TopKExec {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "TopKExec")
     }
 }
@@ -415,7 +415,7 @@ impl ExecutionPlan for TopKExec {
     fn fmt_as(
         &self,
         t: DisplayFormatType,
-        f: &mut std::fmt::Formatter,
+        f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match t {
             DisplayFormatType::Default => {

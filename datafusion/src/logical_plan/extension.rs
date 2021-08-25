@@ -60,7 +60,7 @@ pub trait UserDefinedLogicalNode: fmt::Debug {
     /// Write a single line, human readable string to `f` for use in explain plan
     ///
     /// For example: `TopK: k=10`
-    fn fmt_for_explain(&self, f: &mut fmt::Formatter) -> fmt::Result;
+    fn fmt_for_explain(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 
     /// Create a new `ExtensionPlanNode` with the specified children
     /// and expressions. This function is used during optimization

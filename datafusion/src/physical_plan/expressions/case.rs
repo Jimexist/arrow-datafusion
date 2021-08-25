@@ -52,7 +52,7 @@ pub struct CaseExpr {
 }
 
 impl std::fmt::Display for CaseExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "CASE ")?;
         if let Some(e) = &self.expr {
             write!(f, "{} ", e)?;

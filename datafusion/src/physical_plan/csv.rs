@@ -134,7 +134,7 @@ impl CsvExec {
     /// Create a new execution plan for reading a set of CSV files
     pub fn try_new(
         path: &str,
-        options: CsvReadOptions,
+        options: CsvReadOptions<'_>,
         projection: Option<Vec<usize>>,
         batch_size: usize,
         limit: Option<usize>,
@@ -178,7 +178,7 @@ impl CsvExec {
     /// Create a new execution plan for reading from a reader
     pub fn try_new_from_reader(
         reader: impl Read + Send + Sync + 'static,
-        options: CsvReadOptions,
+        options: CsvReadOptions<'_>,
         projection: Option<Vec<usize>>,
         batch_size: usize,
         limit: Option<usize>,
@@ -259,7 +259,7 @@ impl CsvExec {
     /// Infer schema for given CSV dataset
     pub fn try_infer_schema(
         filenames: &[String],
-        options: &CsvReadOptions,
+        options: &CsvReadOptions<'_>,
     ) -> Result<Schema> {
         Ok(csv::infer_schema_from_files(
             filenames,
@@ -351,7 +351,7 @@ impl ExecutionPlan for CsvExec {
     fn fmt_as(
         &self,
         t: DisplayFormatType,
-        f: &mut std::fmt::Formatter,
+        f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match t {
             DisplayFormatType::Default => {

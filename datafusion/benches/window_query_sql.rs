@@ -17,8 +17,8 @@
 
 #[macro_use]
 extern crate criterion;
-extern crate arrow;
-extern crate datafusion;
+
+
 
 mod data_utils;
 use crate::criterion::Criterion;

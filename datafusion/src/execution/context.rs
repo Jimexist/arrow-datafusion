@@ -273,7 +273,7 @@ impl ExecutionContext {
     pub fn read_csv(
         &mut self,
         filename: impl Into<String>,
-        options: CsvReadOptions,
+        options: CsvReadOptions<'_>,
     ) -> Result<Arc<dyn DataFrame>> {
         Ok(Arc::new(DataFrameImpl::new(
             self.state.clone(),
@@ -314,7 +314,7 @@ impl ExecutionContext {
         &mut self,
         name: &str,
         filename: &str,
-        options: CsvReadOptions,
+        options: CsvReadOptions<'_>,
     ) -> Result<()> {
         self.register_table(name, Arc::new(CsvFile::try_new(filename, options)?))?;
         Ok(())
@@ -904,7 +904,7 @@ impl ExecutionContextState {
 }
 
 impl ContextProvider for ExecutionContextState {
-    fn get_table_provider(&self, name: TableReference) -> Option<Arc<dyn TableProvider>> {
+    fn get_table_provider(&self, name: TableReference<'_>) -> Option<Arc<dyn TableProvider>> {
         let resolved_ref = self.resolve_table_ref(name);
         let schema = self.schema_for_ref(resolved_ref).ok()?;
         schema.table(resolved_ref.table)

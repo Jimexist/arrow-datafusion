@@ -18,8 +18,8 @@
 #[macro_use]
 extern crate criterion;
 use criterion::{BatchSize, Criterion};
-extern crate arrow;
-extern crate datafusion;
+
+
 
 use std::{iter::FromIterator, sync::Arc};
 

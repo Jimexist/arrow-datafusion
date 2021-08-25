@@ -1549,7 +1549,7 @@ pub fn create_udaf(
 }
 
 fn fmt_function(
-    f: &mut fmt::Formatter,
+    f: &mut fmt::Formatter<'_>,
     fun: &str,
     distinct: bool,
     args: &[Expr],
@@ -1563,7 +1563,7 @@ fn fmt_function(
 }
 
 impl fmt::Debug for Expr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Expr::Alias(expr, alias) => write!(f, "{:?} AS {}", expr, alias),
             Expr::Column(c) => write!(f, "{}", c),
