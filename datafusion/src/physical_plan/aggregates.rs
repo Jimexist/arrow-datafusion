@@ -59,8 +59,10 @@ pub enum AggregateFunction {
     Max,
     /// avg
     Avg,
-    /// Approximate aggregate function
+    /// approximate distinct count
     ApproxDistinct,
+    /// `array_agg`
+    ArrayAgg,
 }
 
 impl fmt::Display for AggregateFunction {
@@ -79,6 +81,7 @@ impl FromStr for AggregateFunction {
             "count" => AggregateFunction::Count,
             "avg" => AggregateFunction::Avg,
             "sum" => AggregateFunction::Sum,
+            "array_agg" => AggregateFunction::ArrayAgg,
             "approx_distinct" => AggregateFunction::ApproxDistinct,
             _ => {
                 return Err(DataFusionError::Plan(format!(
@@ -105,6 +108,7 @@ pub fn return_type(fun: &AggregateFunction, arg_types: &[DataType]) -> Result<Da
         AggregateFunction::Max | AggregateFunction::Min => Ok(arg_types[0].clone()),
         AggregateFunction::Sum => sum_return_type(&arg_types[0]),
         AggregateFunction::Avg => avg_return_type(&arg_types[0]),
+        AggregateFunction::ArrayAgg => unimplemented!(),
     }
 }
 
@@ -138,14 +142,12 @@ pub fn create_aggregate_expr(
         (AggregateFunction::Count, false) => {
             Arc::new(expressions::Count::new(arg, name, return_type))
         }
-        (AggregateFunction::Count, true) => {
-            Arc::new(distinct_expressions::DistinctCount::new(
-                arg_types,
-                args.to_vec(),
-                name,
-                return_type,
-            ))
-        }
+        (AggregateFunction::Count, true) => Arc::new(expressions::DistinctCount::new(
+            arg_types,
+            args.to_vec(),
+            name,
+            return_type,
+        )),
         (AggregateFunction::Sum, false) => {
             Arc::new(expressions::Sum::new(arg, name, return_type))
         }
@@ -154,6 +156,9 @@ pub fn create_aggregate_expr(
                 "SUM(DISTINCT) aggregations are not available".to_string(),
             ));
         }
+        (AggregateFunction::ArrayAgg, _) => Arc::new(
+            expressions::ArrayAgg::new(arg, name, arg_types)
+        ),
         (AggregateFunction::ApproxDistinct, _) => Arc::new(
             expressions::ApproxDistinct::new(arg, name, arg_types[0].clone()),
         ),
@@ -205,6 +210,7 @@ pub fn signature(fun: &AggregateFunction) -> Signature {
         AggregateFunction::Count | AggregateFunction::ApproxDistinct => {
             Signature::any(1, Volatility::Immutable)
         }
+        AggregateFunction::ArrayAgg => Signature::variadic_equal(Volatility::Immutable),
         AggregateFunction::Min | AggregateFunction::Max => {
             let valid = STRINGS
                 .iter()

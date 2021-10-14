@@ -413,6 +413,10 @@ impl Expr {
                     .iter()
                     .map(|e| e.get_type(schema))
                     .collect::<Result<Vec<_>>>()?;
+                let arg_fields = args
+                    .iter()
+                    .map(|e| e.to_field(schema))
+                    .collect::<Result<Vec<_>>>()?;
                 aggregates::return_type(fun, &data_types)
             }
             Expr::AggregateUDF { fun, args, .. } => {
