@@ -29,7 +29,8 @@ edition = "2018"
 snmalloc = ["snmalloc-rs"]
 
 [dependencies]
-arrow = { version = "6.0.0"  }
+# arrow = { version = "6.0.0"  }
+arrow = { git = "https://github.com/apache/arrow-rs", branch = "master" }
 arrow-flight = { version = "6.0.0"  }
 anyhow = "1"
 async-trait = "0.1.36"
