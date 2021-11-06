@@ -4073,6 +4073,20 @@ async fn count_distinct_timestamps() -> Result<()> {
 }
 
 #[tokio::test]
+async fn query_null_coercion() -> Result<()> {
+    let mut ctx = ExecutionContext::new();
+
+    {
+        let sql = "SELECT 1 + null";
+        let actual = execute(&mut ctx, sql).await;
+        let expected = vec![vec!["1"]];
+        assert_eq!(expected, actual);
+    }
+
+    Ok(())
+}
+
+#[tokio::test]
 async fn query_is_null() -> Result<()> {
     let schema = Arc::new(Schema::new(vec![Field::new("c1", DataType::Float64, true)]));
 

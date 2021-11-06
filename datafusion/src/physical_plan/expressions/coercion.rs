@@ -82,9 +82,10 @@ pub fn string_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<DataT
     use arrow::datatypes::DataType::*;
     match (lhs_type, rhs_type) {
         (Utf8, Utf8) => Some(Utf8),
-        (LargeUtf8, Utf8) => Some(LargeUtf8),
-        (Utf8, LargeUtf8) => Some(LargeUtf8),
-        (LargeUtf8, LargeUtf8) => Some(LargeUtf8),
+        (LargeUtf8, Utf8 | LargeUtf8) | (Utf8, LargeUtf8) => Some(LargeUtf8),
+        (a @ (Utf8 | LargeUtf8), Null) | (Null, a @ (Utf8 | LargeUtf8)) => {
+            Some(a.clone())
+        }
         _ => None,
     }
 }
@@ -103,8 +104,10 @@ pub fn temporal_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<Dat
     match (lhs_type, rhs_type) {
         (Utf8, Date32) => Some(Date32),
         (Date32, Utf8) => Some(Date32),
-        (Utf8, Date64) => Some(Date64),
-        (Date64, Utf8) => Some(Date64),
+        (Utf8 | Date32 | Date64, Date64) => Some(Date64),
+        (Date64, Utf8 | Date32) => Some(Date64),
+        (Date32, Date32) => Some(Date32),
+        (a @ (Date32 | Date64), Null) | (Null, a @ (Date32 | Date64)) => Some(a.clone()),
         _ => None,
     }
 }
@@ -174,6 +177,56 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_temporal_coercion() {
+        use DataType::*;
+        {
+            let result = temporal_coercion(&Date32, &Date32);
+            assert_eq!(result, Some(Date32));
+        }
+        {
+            let result = temporal_coercion(&Date64, &Date32);
+            assert_eq!(result, Some(Date64));
+        }
+        {
+            let result = temporal_coercion(&Date64, &Null);
+            assert_eq!(result, Some(Date64));
+        }
+        {
+            let result = temporal_coercion(&Date64, &Utf8);
+            assert_eq!(result, None);
+        }
+        {
+            let result = temporal_coercion(&Null, &Null);
+            assert_eq!(result, None);
+        }
+    }
+
+    #[test]
+    fn test_string_coercion() {
+        use DataType::*;
+        {
+            let result = string_coercion(&Int32, &Int64);
+            assert_eq!(result, None);
+        }
+        {
+            let result = string_coercion(&Utf8, &Utf8);
+            assert_eq!(result, Some(Utf8));
+        }
+        {
+            let result = string_coercion(&Null, &Utf8);
+            assert_eq!(result, Some(Utf8));
+        }
+        {
+            let result = string_coercion(&Null, &Null);
+            assert_eq!(result, None);
+        }
+        {
+            let result = string_coercion(&Utf8, &Int64);
+            assert_eq!(result, None);
+        }
+    }
+
+    #[test]
     fn test_numerical_coercion() {
         use DataType::*;
         {
@@ -186,6 +239,10 @@ mod tests {
         }
         {
             let result = numerical_coercion(&Utf8, &Utf8);
+            assert_eq!(result, None);
+        }
+        {
+            let result = numerical_coercion(&Null, &Null);
             assert_eq!(result, None);
         }
         {
