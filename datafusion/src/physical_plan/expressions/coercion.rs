@@ -111,23 +111,25 @@ pub fn temporal_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<Dat
 
 /// Coercion rule for numerical types: The type that both lhs and rhs
 /// can be casted to for numerical calculation, while maintaining
-/// maximum precision
+/// maximum precision; if either side is null, the casting is also possible.
+///
+/// ```
+/// # use arrow::datatypes::DataType::*;
+/// let result = numerical_coercion(&Int32, &Int64);
+/// assert_eq!(result, Some(Int64));
+/// let result = numerical_coercion(&Int32, &Utf8);
+/// assert_eq!(result, None);
+/// let result = numerical_coercion(&Int32, &Null);
+/// assert_eq!(result, Some(Int32));
+/// ```
 pub fn numerical_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<DataType> {
     use arrow::datatypes::DataType::*;
-
-    // error on any non-numeric type
-    if !is_numeric(lhs_type) || !is_numeric(rhs_type) {
-        return None;
-    };
-
-    // same type => all good
-    if lhs_type == rhs_type {
-        return Some(lhs_type.clone());
-    }
-
-    // these are ordered from most informative to least informative so
-    // that the coercion removes the least amount of information
     match (lhs_type, rhs_type) {
+        (a, Null) | (Null, a) if is_numeric(a) => Some(a.clone()),
+        (a, b) if !is_numeric(a) || !is_numeric(b) => None,
+        (a, b) if a == b => Some(a.clone()),
+        // these are ordered from most informative to least informative so
+        // that the coercion removes the least amount of information
         (Float64, _) | (_, Float64) => Some(Float64),
         (_, Float32) | (Float32, _) => Some(Float32),
         (Int64, _) | (_, Int64) => Some(Int64),
@@ -142,7 +144,7 @@ pub fn numerical_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<Da
     }
 }
 
-// coercion rules for equality operations. This is a superset of all numerical coercion rules.
+/// coercion rules for equality operations. This is a superset of all numerical coercion rules.
 pub fn eq_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<DataType> {
     if lhs_type == rhs_type {
         // same type => equality is possible
@@ -153,8 +155,8 @@ pub fn eq_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<DataType>
         .or_else(|| temporal_coercion(lhs_type, rhs_type))
 }
 
-// coercion rules that assume an ordered set, such as "less than".
-// These are the union of all numerical coercion rules and all string coercion rules
+/// coercion rules that assume an ordered set, such as "less than".
+/// These are the union of all numerical coercion rules and all string coercion rules
 pub fn order_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<DataType> {
     if lhs_type == rhs_type {
         // same type => all good
@@ -170,6 +172,27 @@ pub fn order_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<DataTy
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_numerical_coercion() {
+        use DataType::*;
+        {
+            let result = numerical_coercion(&Int32, &Int64);
+            assert_eq!(result, Some(Int64));
+        }
+        {
+            let result = numerical_coercion(&Int32, &Utf8);
+            assert_eq!(result, None);
+        }
+        {
+            let result = numerical_coercion(&Utf8, &Utf8);
+            assert_eq!(result, None);
+        }
+        {
+            let result = numerical_coercion(&Int32, &Null);
+            assert_eq!(result, Some(Int32));
+        }
+    }
 
     #[test]
     fn test_dictionary_type_coersion() {
