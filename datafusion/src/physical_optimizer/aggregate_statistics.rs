@@ -255,7 +255,7 @@ mod tests {
 
     use arrow::array::{Int32Array, UInt64Array};
     use arrow::datatypes::{DataType, Field, Schema};
-    use arrow::record_batch::RecordBatch;
+    use crate::record_batch::RecordBatch;
 
     use crate::error::Result;
     use crate::logical_plan::Operator;

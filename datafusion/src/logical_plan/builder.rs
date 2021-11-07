@@ -30,11 +30,9 @@ use crate::logical_plan::plan::{
     TableScanPlan, ToStringifiedPlan, Union, Window,
 };
 use crate::prelude::*;
+use crate::record_batch::RecordBatch;
 use crate::scalar::ScalarValue;
-use arrow::{
-    datatypes::{DataType, Schema, SchemaRef},
-    record_batch::RecordBatch,
-};
+use arrow::datatypes::{DataType, Schema, SchemaRef};
 use std::convert::TryFrom;
 use std::iter;
 use std::{
