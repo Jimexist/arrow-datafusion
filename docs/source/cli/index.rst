@@ -30,16 +30,16 @@ The easiest way to give DataFusion CLI a spin is via Homebrew (on MacOS). Instal
 
 .. code-block:: bash
 
-    brew install datafusion
-    # ==> Downloading https://ghcr.io/v2/homebrew/core/datafusion/manifests/5.0.0
-    # ######################################################################## 100.0%
-    # ==> Downloading https://ghcr.io/v2/homebrew/core/datafusion/blobs/sha256:9ecc8a01be47ceb9a53b39976696afa87c0a8
-    # ==> Downloading from https://pkg-containers.githubusercontent.com/ghcr1/blobs/sha256:9ecc8a01be47ceb9a53b39976
-    # ######################################################################## 100.0%
-    # ==> Pouring datafusion--5.0.0.big_sur.bottle.tar.gz
-    # 🍺  /usr/local/Cellar/datafusion/5.0.0: 9 files, 17.4MB
+    ❯ brew install datafusion
+    ==> Downloading https://ghcr.io/v2/homebrew/core/datafusion/manifests/6.0.0
+    Already downloaded: /Users/user/Library/Caches/Homebrew/downloads/d13ab71b03fb40c59857c4835f1577408cf7f9c0507f1b5d60ed9d9ee66db472--datafusion-6.0.0.bottle_manifest.json
+    ==> Downloading https://ghcr.io/v2/homebrew/core/datafusion/blobs/sha256:004950695646c92793af61cc530f1ab54fe4d
+    Already downloaded: /Users/user/Library/Caches/Homebrew/downloads/ac13fd5f5cf8eff2bc288d4066d0f4f11435782897f480a79c7184ccb3d9de7d--datafusion--6.0.0.big_sur.bottle.tar.gz
+    ==> Pouring datafusion--6.0.0.big_sur.bottle.tar.gz
+    🍺  /usr/local/Cellar/datafusion/6.0.0: 9 files, 16.3MB
 
-    datafusion-cli
+    ❯ datafusion-cli
+    DataFusion CLI v5.1.0-SNAPSHOT
 
 Run using Cargo
 ===============
@@ -93,6 +93,23 @@ Usage
 
 Type `exit` or `quit` to exit the CLI.
 
+Commands
+========
+
+In CLI you can type `\?` to look up the list of commands.
+
+.. code-block:: shell
+
+    ❯ \?
+    +---------+---------------------+
+    | Command | Description         |
+    +---------+---------------------+
+    | \d      | list tables         |
+    | \d name | describe table      |
+    | \q      | quit datafusion-cli |
+    | \?      | help                |
+    +---------+---------------------+
+    4 rows in set. Query took 0.000 seconds.
 
 Registering Parquet Data Sources
 ================================
