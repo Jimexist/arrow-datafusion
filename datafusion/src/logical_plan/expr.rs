@@ -383,6 +383,8 @@ impl Expr {
             Expr::Alias(expr, _) => expr.get_type(schema),
             Expr::Column(c) => Ok(schema.field_from_column(c)?.data_type().clone()),
             Expr::ScalarVariable(_) => Ok(DataType::Utf8),
+            // this is a special handling for the null case
+            Expr::Literal(ScalarValue::Utf8(None)) => Ok(DataType::Null),
             Expr::Literal(l) => Ok(l.get_datatype()),
             Expr::Case { when_then_expr, .. } => when_then_expr[0].1.get_type(schema),
             Expr::Cast { data_type, .. } => Ok(data_type.clone()),

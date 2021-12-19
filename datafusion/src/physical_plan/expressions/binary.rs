@@ -563,7 +563,6 @@ pub fn binary_operator_data_type(
     // validate that it is possible to perform the operation on incoming types.
     // (or the return datatype cannot be inferred)
     let common_type = common_binary_type(lhs_type, op, rhs_type)?;
-
     match op {
         // operators that return a boolean
         Operator::Eq
@@ -638,7 +637,6 @@ impl PhysicalExpr for BinaryExpr {
         if let Some(result) = scalar_result {
             return result.map(|a| ColumnarValue::Array(a));
         }
-
         // if both arrays or both literals - extract arrays and continue execution
         let (left, right) = (
             left_value.into_array(batch.num_rows()),

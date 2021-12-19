@@ -115,10 +115,16 @@ pub fn temporal_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<Dat
 pub fn numerical_coercion(lhs_type: &DataType, rhs_type: &DataType) -> Option<DataType> {
     use arrow::datatypes::DataType::*;
 
-    // error on any non-numeric type
-    if !is_numeric(lhs_type) || !is_numeric(rhs_type) {
+    let lhs_numeric = is_numeric(lhs_type);
+    let rhs_numeric = is_numeric(rhs_type);
+
+    if lhs_numeric && &DataType::Null == rhs_type {
+        return Some(lhs_type.clone());
+    } else if rhs_numeric && &DataType::Null == lhs_type {
+        return Some(rhs_type.clone());
+    } else if !lhs_numeric || !rhs_numeric {
         return None;
-    };
+    }
 
     // same type => all good
     if lhs_type == rhs_type {
