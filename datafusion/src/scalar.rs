@@ -31,6 +31,7 @@ use arrow::{
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
 use std::convert::{Infallible, TryInto};
+use std::ops::Range;
 use std::str::FromStr;
 use std::{convert::TryFrom, fmt, iter::repeat, sync::Arc};
 
@@ -371,8 +372,18 @@ macro_rules! typed_cast_tz {
     }};
 }
 
-macro_rules! typed_cast {
+macro_rules! typed_cast_one {
     ($array:expr, $index:expr, $ARRAYTYPE:ident, $SCALAR:ident) => {{
+        let array = $array.as_any().downcast_ref::<$ARRAYTYPE>().unwrap();
+        ScalarValue::$SCALAR(match array.is_null($index) {
+            true => None,
+            false => Some(array.value($index).into()),
+        })
+    }};
+}
+
+macro_rules! typed_cast_multiple {
+    ($array:expr, $range:expr, $ARRAYTYPE:ident, $SCALAR:ident) => {{
         let array = $array.as_any().downcast_ref::<$ARRAYTYPE>().unwrap();
         ScalarValue::$SCALAR(match array.is_null($index) {
             true => None,
@@ -1283,6 +1294,11 @@ impl ScalarValue {
         }
     }
 
+    /// Converts a `range` of values in `array` to a vec of `ScalarValue`
+    pub fn try_vec_from_array(array: ArrayRef, range: Range<usize>) -> Result<Vec<Self>> {
+        unimplemented!()
+    }
+
     /// Converts a value in `array` at `index` into a ScalarValue
     pub fn try_from_array(array: &ArrayRef, index: usize) -> Result<Self> {
         // handle NULL value
@@ -1294,23 +1310,25 @@ impl ScalarValue {
             DataType::Decimal(precision, scale) => {
                 ScalarValue::get_decimal_value_from_array(array, index, precision, scale)
             }
-            DataType::Boolean => typed_cast!(array, index, BooleanArray, Boolean),
-            DataType::Float64 => typed_cast!(array, index, Float64Array, Float64),
-            DataType::Float32 => typed_cast!(array, index, Float32Array, Float32),
-            DataType::UInt64 => typed_cast!(array, index, UInt64Array, UInt64),
-            DataType::UInt32 => typed_cast!(array, index, UInt32Array, UInt32),
-            DataType::UInt16 => typed_cast!(array, index, UInt16Array, UInt16),
-            DataType::UInt8 => typed_cast!(array, index, UInt8Array, UInt8),
-            DataType::Int64 => typed_cast!(array, index, Int64Array, Int64),
-            DataType::Int32 => typed_cast!(array, index, Int32Array, Int32),
-            DataType::Int16 => typed_cast!(array, index, Int16Array, Int16),
-            DataType::Int8 => typed_cast!(array, index, Int8Array, Int8),
-            DataType::Binary => typed_cast!(array, index, BinaryArray, Binary),
+            DataType::Boolean => typed_cast_one!(array, index, BooleanArray, Boolean),
+            DataType::Float64 => typed_cast_one!(array, index, Float64Array, Float64),
+            DataType::Float32 => typed_cast_one!(array, index, Float32Array, Float32),
+            DataType::UInt64 => typed_cast_one!(array, index, UInt64Array, UInt64),
+            DataType::UInt32 => typed_cast_one!(array, index, UInt32Array, UInt32),
+            DataType::UInt16 => typed_cast_one!(array, index, UInt16Array, UInt16),
+            DataType::UInt8 => typed_cast_one!(array, index, UInt8Array, UInt8),
+            DataType::Int64 => typed_cast_one!(array, index, Int64Array, Int64),
+            DataType::Int32 => typed_cast_one!(array, index, Int32Array, Int32),
+            DataType::Int16 => typed_cast_one!(array, index, Int16Array, Int16),
+            DataType::Int8 => typed_cast_one!(array, index, Int8Array, Int8),
+            DataType::Binary => typed_cast_one!(array, index, BinaryArray, Binary),
             DataType::LargeBinary => {
-                typed_cast!(array, index, LargeBinaryArray, LargeBinary)
+                typed_cast_one!(array, index, LargeBinaryArray, LargeBinary)
             }
-            DataType::Utf8 => typed_cast!(array, index, StringArray, Utf8),
-            DataType::LargeUtf8 => typed_cast!(array, index, LargeStringArray, LargeUtf8),
+            DataType::Utf8 => typed_cast_one!(array, index, StringArray, Utf8),
+            DataType::LargeUtf8 => {
+                typed_cast_one!(array, index, LargeStringArray, LargeUtf8)
+            }
             DataType::List(nested_type) => {
                 let list_array =
                     array.as_any().downcast_ref::<ListArray>().ok_or_else(|| {
@@ -1333,10 +1351,10 @@ impl ScalarValue {
                 ScalarValue::List(value, data_type)
             }
             DataType::Date32 => {
-                typed_cast!(array, index, Date32Array, Date32)
+                typed_cast_one!(array, index, Date32Array, Date32)
             }
             DataType::Date64 => {
-                typed_cast!(array, index, Date64Array, Date64)
+                typed_cast_one!(array, index, Date64Array, Date64)
             }
             DataType::Timestamp(TimeUnit::Second, tz_opt) => {
                 typed_cast_tz!(
