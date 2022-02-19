@@ -16,6 +16,7 @@
 // under the License.
 
 mod aggregate_expr;
+pub mod expressions;
 mod physical_expr;
 mod sort_expr;
 mod window_expr;

@@ -17,6 +17,7 @@
 
 //! Defines physical expressions that can evaluated at runtime during query execution
 
+pub use crate::PhysicalSortExpr;
 use datafusion_expr::ColumnarValue;
 
 mod approx_distinct;
@@ -111,8 +112,6 @@ pub(crate) use variance::{
 pub fn format_state_name(name: &str, state_name: &str) -> String {
     format!("{}[{}]", name, state_name)
 }
-
-pub use datafusion_physical_expr::PhysicalSortExpr;
 
 #[cfg(test)]
 mod tests {

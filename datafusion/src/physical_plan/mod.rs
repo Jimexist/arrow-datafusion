@@ -24,6 +24,7 @@ use self::{
 };
 use crate::physical_plan::expressions::PhysicalSortExpr;
 use crate::{error::Result, execution::runtime_env::RuntimeEnv, scalar::ScalarValue};
+pub use datafusion_physical_expr::expressions;
 
 use arrow::datatypes::SchemaRef;
 use arrow::error::Result as ArrowResult;
