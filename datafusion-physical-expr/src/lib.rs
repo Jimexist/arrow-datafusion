@@ -17,11 +17,13 @@
 
 mod aggregate_expr;
 pub mod expressions;
+mod partition_evaluator;
 mod physical_expr;
 mod sort_expr;
 mod window_expr;
 
 pub use aggregate_expr::AggregateExpr;
+pub use partition_evaluator::PartitionEvaluator;
 pub use physical_expr::PhysicalExpr;
 pub use sort_expr::PhysicalSortExpr;
 pub use window_expr::WindowExpr;

@@ -17,7 +17,7 @@
 
 //! Defines physical expressions that can evaluated at runtime during query execution
 
-pub use crate::PhysicalSortExpr;
+use crate::PhysicalSortExpr;
 use datafusion_expr::ColumnarValue;
 
 mod approx_distinct;

@@ -112,51 +112,7 @@ pub(super) fn signature_for_built_in(fun: &BuiltInWindowFunction) -> Signature {
     }
 }
 
-/// Partition evaluator
-pub(crate) trait PartitionEvaluator {
-    /// Whether the evaluator should be evaluated with rank
-    fn include_rank(&self) -> bool {
-        false
-    }
-
-    /// evaluate the partition evaluator against the partitions
-    fn evaluate(&self, partition_points: Vec<Range<usize>>) -> Result<Vec<ArrayRef>> {
-        partition_points
-            .into_iter()
-            .map(|partition| self.evaluate_partition(partition))
-            .collect()
-    }
-
-    /// evaluate the partition evaluator against the partitions with rank information
-    fn evaluate_with_rank(
-        &self,
-        partition_points: Vec<Range<usize>>,
-        sort_partition_points: Vec<Range<usize>>,
-    ) -> Result<Vec<ArrayRef>> {
-        partition_points
-            .into_iter()
-            .map(|partition| {
-                let ranks_in_partition =
-                    find_ranges_in_range(&partition, &sort_partition_points);
-                self.evaluate_partition_with_rank(partition, ranks_in_partition)
-            })
-            .collect()
-    }
-
-    /// evaluate the partition evaluator against the partition
-    fn evaluate_partition(&self, _partition: Range<usize>) -> Result<ArrayRef>;
-
-    /// evaluate the partition evaluator against the partition but with rank
-    fn evaluate_partition_with_rank(
-        &self,
-        _partition: Range<usize>,
-        _ranks_in_partition: &[Range<usize>],
-    ) -> Result<ArrayRef> {
-        Err(DataFusionError::NotImplemented(
-            "evaluate_partition_with_rank is not implemented by default".into(),
-        ))
-    }
-}
+pub use datafusion_physical_expr::PartitionEvaluator;
 
 /// A window expression that is a built-in window function.
 ///
