@@ -18,25 +18,39 @@
 [package]
 name = "datafusion-proto"
 description = "Protobuf serialization of DataFusion logical plan expressions"
-version = "7.0.0"
+version = "11.0.0"
 homepage = "https://github.com/apache/arrow-datafusion"
 repository = "https://github.com/apache/arrow-datafusion"
-readme = "../README.md"
+readme = "README.md"
 authors = ["Apache Arrow <dev@arrow.apache.org>"]
 license = "Apache-2.0"
-keywords = [ "arrow", "query", "sql" ]
+keywords = ["arrow", "query", "sql"]
 edition = "2021"
-rust-version = "1.58"
+rust-version = "1.62"
 
 [lib]
 name = "datafusion_proto"
 path = "src/lib.rs"
 
 [features]
+default = []
+json = ["pbjson", "pbjson-build", "serde", "serde_json"]
 
 [dependencies]
-datafusion = { path = "../core", version = "7.0.0" }
-prost = "0.10"
+arrow = { version = "20.0.0" }
+datafusion = { path = "../core", version = "11.0.0" }
+datafusion-common = { path = "../common", version = "11.0.0" }
+datafusion-expr = { path = "../expr", version = "11.0.0" }
+pbjson = { version = "0.4", optional = true }
+pbjson-types = { version = "0.3", optional = true }
+prost = "0.11.0"
+serde = { version = "1.0", optional = true }
+serde_json = { version = "1.0", optional = true }
+
+[dev-dependencies]
+doc-comment = "0.3"
+tokio = "1.18"
 
 [build-dependencies]
-tonic-build = { version = "0.7" }
+pbjson-build = { version = "0.3", optional = true }
+prost-build = { version = "0.11.1" }
